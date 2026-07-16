@@ -3,6 +3,7 @@
 ## Objetivo
 
 Este projeto utiliza Next.js (App Router) com TypeScript.
+Não execute comandos no terminal previamente sem permissão.
 
 Sempre priorize:
 - código limpo

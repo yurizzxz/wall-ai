@@ -6,7 +6,7 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
-import "./globals.css";
+import "../globals.css";
 
 export const metadata: Metadata = {
   title: "Create Next App",

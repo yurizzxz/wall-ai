@@ -2,7 +2,7 @@ import {
   assertAmountInCents,
   assertPositiveAmountInCents,
   type AmountInCents,
-} from "@/modules/shared/domain/money";
+} from "../../shared/domain/money";
 
 export type InvoiceStatus = "OPEN" | "CLOSED" | "OVERDUE" | "PAID";
 

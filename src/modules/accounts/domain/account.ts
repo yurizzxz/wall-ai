@@ -1,7 +1,7 @@
 import {
   assertAmountInCents,
   type AmountInCents,
-} from "@/modules/shared/domain/money";
+} from "../../shared/domain/money";
 
 export type AccountType = "CHECKING" | "SAVINGS" | "CASH" | "INVESTMENT";
 

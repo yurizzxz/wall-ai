@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "rootDir": ".",
+    "outDir": ".next/test-build",
+    "noEmitOnError": true,
+    "types": ["node"]
+  },
+  "include": ["src/modules/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
+}

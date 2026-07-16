@@ -1,11 +1,11 @@
 import {
   assertPositiveAmountInCents,
   type AmountInCents,
-} from "@/modules/shared/domain/money";
+} from "../../shared/domain/money";
 import type {
   PaymentMethod,
   TransactionKind,
-} from "@/modules/transactions/domain/transaction";
+} from "../../transactions/domain/transaction";
 
 export type RecurrenceFrequency = "WEEKLY" | "MONTHLY" | "YEARLY";
 
@@ -54,10 +54,32 @@ export function calculateNextOccurrence(
   if (frequency === "WEEKLY") {
     next.setDate(next.getDate() + 7);
   } else if (frequency === "MONTHLY") {
+    const originalDay = next.getDate();
+    next.setDate(1);
     next.setMonth(next.getMonth() + 1);
+    next.setDate(
+      Math.min(
+        originalDay,
+        daysInMonth(next.getFullYear(), next.getMonth()),
+      ),
+    );
   } else {
+    const originalDay = next.getDate();
+    const originalMonth = next.getMonth();
+    next.setDate(1);
     next.setFullYear(next.getFullYear() + 1);
+    next.setMonth(originalMonth);
+    next.setDate(
+      Math.min(
+        originalDay,
+        daysInMonth(next.getFullYear(), originalMonth),
+      ),
+    );
   }
 
   return next;
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
 }

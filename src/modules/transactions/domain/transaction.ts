@@ -1,7 +1,7 @@
 import {
   assertPositiveAmountInCents,
   type AmountInCents,
-} from "@/modules/shared/domain/money";
+} from "../../shared/domain/money";
 
 export type TransactionKind = "INCOME" | "EXPENSE";
 export type TransactionStatus = "PENDING" | "SETTLED" | "CANCELLED";
@@ -59,8 +59,14 @@ export function validateTransaction(
     if (!input.creditCardId) {
       throw new Error("Uma compra no crédito precisa indicar o cartão.");
     }
+
+    if (input.accountId) {
+      throw new Error("Uma compra no crédito não movimenta uma conta diretamente.");
+    }
   } else if (!input.accountId) {
     throw new Error("O lançamento precisa indicar a conta movimentada.");
+  } else if (input.creditCardId) {
+    throw new Error("Somente compras no crédito podem indicar um cartão.");
   }
 
   return {
