@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,332 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  INVESTMENT
+}
+
+enum CategoryKind {
+  INCOME
+  EXPENSE
+  BOTH
+}
+
+enum TransactionKind {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  SETTLED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  DEBIT_CARD
+  BANK_TRANSFER
+  CREDIT_CARD
+}
+
+enum InvoiceStatus {
+  OPEN
+  CLOSED
+  OVERDUE
+  PAID
+}
+
+enum DebtStatus {
+  OPEN
+  OVERDUE
+  PAID
+  CANCELLED
+}
+
+enum SavingsGoalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  clerkId   String    @unique @map("clerk_id")
+  email     String?   @unique
+  name      String?
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  accounts         Account[]
+  categories       Category[]
+  transactions     Transaction[]
+  creditCards      CreditCard[]
+  invoices         Invoice[]
+  debts            Debt[]
+  debtPayments     DebtPayment[]
+  savingsGoals     SavingsGoal[]
+  contributions    SavingsContribution[]
+  recurrences      RecurringTransaction[]
+
+  @@map("users")
+}
+
+model Account {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @map("user_id") @db.Uuid
+  name                  String
+  type                  AccountType
+  currency              String   @default("BRL") @db.VarChar(3)
+  initialBalanceInCents Int      @default(0) @map("initial_balance_in_cents")
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions         Transaction[]
+  debtPayments         DebtPayment[]
+  savingsContributions SavingsContribution[]
+  recurrences          RecurringTransaction[]
+
+  @@unique([userId, name])
+  @@index([userId, isActive])
+  @@map("accounts")
+}
+
+model Category {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  name      String
+  kind      CategoryKind
+  color     String?
+  icon      String?
+  isActive  Boolean      @default(true) @map("is_active")
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+  recurrences  RecurringTransaction[]
+
+  @@unique([userId, name, kind])
+  @@index([userId, isActive])
+  @@map("categories")
+}
+
+model Transaction {
+  id                  String            @id @default(uuid()) @db.Uuid
+  userId              String            @map("user_id") @db.Uuid
+  accountId           String?           @map("account_id") @db.Uuid
+  categoryId          String            @map("category_id") @db.Uuid
+  creditCardId        String?           @map("credit_card_id") @db.Uuid
+  paidInvoiceId       String?           @map("paid_invoice_id") @db.Uuid
+  description         String
+  notes               String?
+  amountInCents       Int               @map("amount_in_cents")
+  kind                TransactionKind
+  status              TransactionStatus @default(PENDING)
+  paymentMethod       PaymentMethod     @map("payment_method")
+  occurredAt          DateTime          @map("occurred_at") @db.Timestamptz(3)
+  dueAt               DateTime?         @map("due_at") @db.Timestamptz(3)
+  settledAt           DateTime?         @map("settled_at") @db.Timestamptz(3)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account       Account?                @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category      Category                @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  creditCard    CreditCard?             @relation("CreditCardPurchases", fields: [creditCardId], references: [id], onDelete: Restrict)
+  paidInvoice   Invoice?                @relation("InvoicePayments", fields: [paidInvoiceId], references: [id], onDelete: Restrict)
+  installments  CreditCardInstallment[]
+  debtPayment   DebtPayment?
+  contribution  SavingsContribution?
+
+  @@index([userId, occurredAt])
+  @@index([userId, status, dueAt])
+  @@index([accountId, status])
+  @@index([creditCardId, occurredAt])
+  @@map("transactions")
+}
+
+model CreditCard {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  name         String
+  lastFour     String?  @map("last_four") @db.VarChar(4)
+  limitInCents Int      @map("limit_in_cents")
+  closingDay   Int      @map("closing_day")
+  dueDay       Int      @map("due_day")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  purchases   Transaction[]          @relation("CreditCardPurchases")
+  invoices    Invoice[]
+  recurrences RecurringTransaction[]
+
+  @@unique([userId, name])
+  @@index([userId, isActive])
+  @@map("credit_cards")
+}
+
+model Invoice {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  creditCardId String        @map("credit_card_id") @db.Uuid
+  totalInCents Int           @default(0) @map("total_in_cents")
+  paidInCents  Int           @default(0) @map("paid_in_cents")
+  status       InvoiceStatus @default(OPEN)
+  periodStart  DateTime      @map("period_start") @db.Date
+  periodEnd    DateTime      @map("period_end") @db.Date
+  closingAt    DateTime      @map("closing_at") @db.Timestamptz(3)
+  dueAt        DateTime      @map("due_at") @db.Timestamptz(3)
+  paidAt       DateTime?     @map("paid_at") @db.Timestamptz(3)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user                User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  creditCard          CreditCard              @relation(fields: [creditCardId], references: [id], onDelete: Restrict)
+  installments        CreditCardInstallment[]
+  paymentTransactions Transaction[]           @relation("InvoicePayments")
+
+  @@unique([creditCardId, periodStart])
+  @@index([userId, status, dueAt])
+  @@map("invoices")
+}
+
+model CreditCardInstallment {
+  id            String   @id @default(uuid()) @db.Uuid
+  purchaseId    String   @map("purchase_id") @db.Uuid
+  invoiceId     String?  @map("invoice_id") @db.Uuid
+  number        Int
+  totalCount    Int      @map("total_count")
+  amountInCents Int      @map("amount_in_cents")
+  dueAt         DateTime @map("due_at") @db.Date
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  purchase Transaction @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  invoice  Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@unique([purchaseId, number])
+  @@index([invoiceId])
+  @@index([dueAt])
+  @@map("credit_card_installments")
+}
+
+model Debt {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  creditor     String
+  description  String
+  totalInCents Int        @map("total_in_cents")
+  paidInCents  Int        @default(0) @map("paid_in_cents")
+  dueAt        DateTime?  @map("due_at") @db.Date
+  status       DebtStatus @default(OPEN)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  payments DebtPayment[]
+
+  @@index([userId, status, dueAt])
+  @@map("debts")
+}
+
+model DebtPayment {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  debtId        String   @map("debt_id") @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  transactionId String?  @unique @map("transaction_id") @db.Uuid
+  amountInCents Int      @map("amount_in_cents")
+  paidAt        DateTime @map("paid_at") @db.Timestamptz(3)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  debt        Debt         @relation(fields: [debtId], references: [id], onDelete: Restrict)
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@index([debtId, paidAt])
+  @@index([userId, paidAt])
+  @@map("debt_payments")
+}
+
+model SavingsGoal {
+  id            String            @id @default(uuid()) @db.Uuid
+  userId        String            @map("user_id") @db.Uuid
+  name          String
+  targetInCents Int               @map("target_in_cents")
+  savedInCents  Int               @default(0) @map("saved_in_cents")
+  deadline      DateTime?         @db.Date
+  status        SavingsGoalStatus @default(ACTIVE)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contributions SavingsContribution[]
+
+  @@unique([userId, name])
+  @@index([userId, status, deadline])
+  @@map("savings_goals")
+}
+
+model SavingsContribution {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  savingsGoalId String   @map("savings_goal_id") @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  transactionId String?  @unique @map("transaction_id") @db.Uuid
+  amountInCents Int      @map("amount_in_cents")
+  contributedAt DateTime @map("contributed_at") @db.Timestamptz(3)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  savingsGoal SavingsGoal  @relation(fields: [savingsGoalId], references: [id], onDelete: Restrict)
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@index([savingsGoalId, contributedAt])
+  @@index([userId, contributedAt])
+  @@map("savings_contributions")
+}
+
+model RecurringTransaction {
+  id               String              @id @default(uuid()) @db.Uuid
+  userId           String              @map("user_id") @db.Uuid
+  accountId        String?             @map("account_id") @db.Uuid
+  categoryId       String              @map("category_id") @db.Uuid
+  creditCardId     String?             @map("credit_card_id") @db.Uuid
+  description      String
+  amountInCents    Int                 @map("amount_in_cents")
+  kind             TransactionKind
+  paymentMethod    PaymentMethod       @map("payment_method")
+  frequency        RecurrenceFrequency
+  nextOccurrenceAt DateTime            @map("next_occurrence_at") @db.Timestamptz(3)
+  endsAt           DateTime?           @map("ends_at") @db.Timestamptz(3)
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account    Account?    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  creditCard CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: Restrict)
+
+  @@index([userId, isActive, nextOccurrenceAt])
+  @@map("recurring_transactions")
 }
