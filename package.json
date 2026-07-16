@@ -10,10 +10,10 @@
     "test": "tsc -p tsconfig.tests.json && cd .next/test-build && node --test"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.19",
     "@neondatabase/serverless": "^1.1.0",
-    "drizzle-orm": "1.0.0-rc.4",
+    "better-auth": "^1.6.23",
     "next": "16.2.10",
+    "pg": "8",
     "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
