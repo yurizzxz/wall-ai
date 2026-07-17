@@ -1,178 +1,228 @@
-import { defineRelations } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 
-import * as schema from "@/db/schema";
+import {
+  account as authAccount,
+  session,
+  user,
+} from "@/db/auth-schema";
+import {
+  categoryTable,
+  creditCardInstallmentTable,
+  creditCardTable,
+  debtPaymentTable,
+  debtTable,
+  financialAccountTable,
+  invoiceTable,
+  recurringTransactionTable,
+  savingsContributionTable,
+  savingsGoalTable,
+  transactionTable,
+} from "@/db/schema";
 
-export const relations = defineRelations(schema, (r) => ({
-  userTable: {
-    accounts: r.many.accountTable(),
-    categories: r.many.categoryTable(),
-    creditCards: r.many.creditCardTable(),
-    invoices: r.many.invoiceTable(),
-    transactions: r.many.transactionTable(),
-    debts: r.many.debtTable(),
-    debtPayments: r.many.debtPaymentTable(),
-    savingsGoals: r.many.savingsGoalTable(),
-    savingsContributions: r.many.savingsContributionTable(),
-    recurringTransactions: r.many.recurringTransactionTable(),
-  },
-
-  accountTable: {
-    user: r.one.userTable({
-      from: r.accountTable.userId,
-      to: r.userTable.id,
-    }),
-    transactions: r.many.transactionTable(),
-    debtPayments: r.many.debtPaymentTable(),
-    savingsContributions: r.many.savingsContributionTable(),
-    recurringTransactions: r.many.recurringTransactionTable(),
-  },
-
-  categoryTable: {
-    user: r.one.userTable({
-      from: r.categoryTable.userId,
-      to: r.userTable.id,
-    }),
-    transactions: r.many.transactionTable(),
-    recurringTransactions: r.many.recurringTransactionTable(),
-  },
-
-  creditCardTable: {
-    user: r.one.userTable({
-      from: r.creditCardTable.userId,
-      to: r.userTable.id,
-    }),
-    purchases: r.many.transactionTable(),
-    invoices: r.many.invoiceTable(),
-    recurringTransactions: r.many.recurringTransactionTable(),
-  },
-
-  invoiceTable: {
-    user: r.one.userTable({
-      from: r.invoiceTable.userId,
-      to: r.userTable.id,
-    }),
-    creditCard: r.one.creditCardTable({
-      from: r.invoiceTable.creditCardId,
-      to: r.creditCardTable.id,
-    }),
-    installments: r.many.creditCardInstallmentTable(),
-    paymentTransactions: r.many.transactionTable(),
-  },
-
-  transactionTable: {
-    user: r.one.userTable({
-      from: r.transactionTable.userId,
-      to: r.userTable.id,
-    }),
-    account: r.one.accountTable({
-      from: r.transactionTable.accountId,
-      to: r.accountTable.id,
-    }),
-    category: r.one.categoryTable({
-      from: r.transactionTable.categoryId,
-      to: r.categoryTable.id,
-    }),
-    creditCard: r.one.creditCardTable({
-      from: r.transactionTable.creditCardId,
-      to: r.creditCardTable.id,
-    }),
-    paidInvoice: r.one.invoiceTable({
-      from: r.transactionTable.paidInvoiceId,
-      to: r.invoiceTable.id,
-    }),
-    sourceRecurrence: r.one.recurringTransactionTable({
-      from: r.transactionTable.sourceRecurringTransactionId,
-      to: r.recurringTransactionTable.id,
-    }),
-    installments: r.many.creditCardInstallmentTable(),
-    // FK única (debtPaymentTable.transactionId / savingsContributionTable.transactionId
-    // têm uniqueIndex) -> relação 1:1, por isso "one" em vez de "many" aqui.
-    debtPayment: r.one.debtPaymentTable(),
-    savingsContribution: r.one.savingsContributionTable(),
-  },
-
-  creditCardInstallmentTable: {
-    purchase: r.one.transactionTable({
-      from: r.creditCardInstallmentTable.purchaseId,
-      to: r.transactionTable.id,
-    }),
-    invoice: r.one.invoiceTable({
-      from: r.creditCardInstallmentTable.invoiceId,
-      to: r.invoiceTable.id,
-    }),
-  },
-
-  debtTable: {
-    user: r.one.userTable({
-      from: r.debtTable.userId,
-      to: r.userTable.id,
-    }),
-    payments: r.many.debtPaymentTable(),
-  },
-
-  debtPaymentTable: {
-    user: r.one.userTable({
-      from: r.debtPaymentTable.userId,
-      to: r.userTable.id,
-    }),
-    debt: r.one.debtTable({
-      from: r.debtPaymentTable.debtId,
-      to: r.debtTable.id,
-    }),
-    account: r.one.accountTable({
-      from: r.debtPaymentTable.accountId,
-      to: r.accountTable.id,
-    }),
-    transaction: r.one.transactionTable({
-      from: r.debtPaymentTable.transactionId,
-      to: r.transactionTable.id,
-    }),
-  },
-
-  savingsGoalTable: {
-    user: r.one.userTable({
-      from: r.savingsGoalTable.userId,
-      to: r.userTable.id,
-    }),
-    contributions: r.many.savingsContributionTable(),
-  },
-
-  savingsContributionTable: {
-    user: r.one.userTable({
-      from: r.savingsContributionTable.userId,
-      to: r.userTable.id,
-    }),
-    savingsGoal: r.one.savingsGoalTable({
-      from: r.savingsContributionTable.savingsGoalId,
-      to: r.savingsGoalTable.id,
-    }),
-    account: r.one.accountTable({
-      from: r.savingsContributionTable.accountId,
-      to: r.accountTable.id,
-    }),
-    transaction: r.one.transactionTable({
-      from: r.savingsContributionTable.transactionId,
-      to: r.transactionTable.id,
-    }),
-  },
-
-  recurringTransactionTable: {
-    user: r.one.userTable({
-      from: r.recurringTransactionTable.userId,
-      to: r.userTable.id,
-    }),
-    account: r.one.accountTable({
-      from: r.recurringTransactionTable.accountId,
-      to: r.accountTable.id,
-    }),
-    category: r.one.categoryTable({
-      from: r.recurringTransactionTable.categoryId,
-      to: r.categoryTable.id,
-    }),
-    creditCard: r.one.creditCardTable({
-      from: r.recurringTransactionTable.creditCardId,
-      to: r.creditCardTable.id,
-    }),
-    occurrences: r.many.transactionTable(),
-  },
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  authAccounts: many(authAccount),
+  financialAccounts: many(financialAccountTable),
+  categories: many(categoryTable),
+  creditCards: many(creditCardTable),
+  invoices: many(invoiceTable),
+  transactions: many(transactionTable),
+  debts: many(debtTable),
+  debtPayments: many(debtPaymentTable),
+  savingsGoals: many(savingsGoalTable),
+  savingsContributions: many(savingsContributionTable),
+  recurringTransactions: many(recurringTransactionTable),
 }));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const authAccountRelations = relations(authAccount, ({ one }) => ({
+  user: one(user, {
+    fields: [authAccount.userId],
+    references: [user.id],
+  }),
+}));
+
+export const financialAccountRelations = relations(
+  financialAccountTable,
+  ({ one, many }) => ({
+    user: one(user, {
+      fields: [financialAccountTable.userId],
+      references: [user.id],
+    }),
+    transactions: many(transactionTable),
+    debtPayments: many(debtPaymentTable),
+    savingsContributions: many(savingsContributionTable),
+    recurringTransactions: many(recurringTransactionTable),
+  }),
+);
+
+export const categoryRelations = relations(categoryTable, ({ one, many }) => ({
+  user: one(user, {
+    fields: [categoryTable.userId],
+    references: [user.id],
+  }),
+  transactions: many(transactionTable),
+  recurringTransactions: many(recurringTransactionTable),
+}));
+
+export const creditCardRelations = relations(
+  creditCardTable,
+  ({ one, many }) => ({
+    user: one(user, {
+      fields: [creditCardTable.userId],
+      references: [user.id],
+    }),
+    purchases: many(transactionTable),
+    invoices: many(invoiceTable),
+    recurringTransactions: many(recurringTransactionTable),
+  }),
+);
+
+export const invoiceRelations = relations(invoiceTable, ({ one, many }) => ({
+  user: one(user, {
+    fields: [invoiceTable.userId],
+    references: [user.id],
+  }),
+  creditCard: one(creditCardTable, {
+    fields: [invoiceTable.creditCardId],
+    references: [creditCardTable.id],
+  }),
+  installments: many(creditCardInstallmentTable),
+  paymentTransactions: many(transactionTable),
+}));
+
+export const transactionRelations = relations(
+  transactionTable,
+  ({ one, many }) => ({
+    user: one(user, {
+      fields: [transactionTable.userId],
+      references: [user.id],
+    }),
+    account: one(financialAccountTable, {
+      fields: [transactionTable.accountId],
+      references: [financialAccountTable.id],
+    }),
+    category: one(categoryTable, {
+      fields: [transactionTable.categoryId],
+      references: [categoryTable.id],
+    }),
+    creditCard: one(creditCardTable, {
+      fields: [transactionTable.creditCardId],
+      references: [creditCardTable.id],
+    }),
+    paidInvoice: one(invoiceTable, {
+      fields: [transactionTable.paidInvoiceId],
+      references: [invoiceTable.id],
+    }),
+    sourceRecurrence: one(recurringTransactionTable, {
+      fields: [transactionTable.sourceRecurringTransactionId],
+      references: [recurringTransactionTable.id],
+    }),
+    installments: many(creditCardInstallmentTable),
+    debtPayment: one(debtPaymentTable),
+    savingsContribution: one(savingsContributionTable),
+  }),
+);
+
+export const creditCardInstallmentRelations = relations(
+  creditCardInstallmentTable,
+  ({ one }) => ({
+    purchase: one(transactionTable, {
+      fields: [creditCardInstallmentTable.purchaseId],
+      references: [transactionTable.id],
+    }),
+    invoice: one(invoiceTable, {
+      fields: [creditCardInstallmentTable.invoiceId],
+      references: [invoiceTable.id],
+    }),
+  }),
+);
+
+export const debtRelations = relations(debtTable, ({ one, many }) => ({
+  user: one(user, {
+    fields: [debtTable.userId],
+    references: [user.id],
+  }),
+  payments: many(debtPaymentTable),
+}));
+
+export const debtPaymentRelations = relations(debtPaymentTable, ({ one }) => ({
+  user: one(user, {
+    fields: [debtPaymentTable.userId],
+    references: [user.id],
+  }),
+  debt: one(debtTable, {
+    fields: [debtPaymentTable.debtId],
+    references: [debtTable.id],
+  }),
+  account: one(financialAccountTable, {
+    fields: [debtPaymentTable.accountId],
+    references: [financialAccountTable.id],
+  }),
+  transaction: one(transactionTable, {
+    fields: [debtPaymentTable.transactionId],
+    references: [transactionTable.id],
+  }),
+}));
+
+export const savingsGoalRelations = relations(
+  savingsGoalTable,
+  ({ one, many }) => ({
+    user: one(user, {
+      fields: [savingsGoalTable.userId],
+      references: [user.id],
+    }),
+    contributions: many(savingsContributionTable),
+  }),
+);
+
+export const savingsContributionRelations = relations(
+  savingsContributionTable,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [savingsContributionTable.userId],
+      references: [user.id],
+    }),
+    savingsGoal: one(savingsGoalTable, {
+      fields: [savingsContributionTable.savingsGoalId],
+      references: [savingsGoalTable.id],
+    }),
+    account: one(financialAccountTable, {
+      fields: [savingsContributionTable.accountId],
+      references: [financialAccountTable.id],
+    }),
+    transaction: one(transactionTable, {
+      fields: [savingsContributionTable.transactionId],
+      references: [transactionTable.id],
+    }),
+  }),
+);
+
+export const recurringTransactionRelations = relations(
+  recurringTransactionTable,
+  ({ one, many }) => ({
+    user: one(user, {
+      fields: [recurringTransactionTable.userId],
+      references: [user.id],
+    }),
+    account: one(financialAccountTable, {
+      fields: [recurringTransactionTable.accountId],
+      references: [financialAccountTable.id],
+    }),
+    category: one(categoryTable, {
+      fields: [recurringTransactionTable.categoryId],
+      references: [categoryTable.id],
+    }),
+    creditCard: one(creditCardTable, {
+      fields: [recurringTransactionTable.creditCardId],
+      references: [creditCardTable.id],
+    }),
+    occurrences: many(transactionTable),
+  }),
+);

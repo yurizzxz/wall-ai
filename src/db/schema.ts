@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
 import {
   boolean,
   check,
@@ -24,31 +25,31 @@ const timestamps = {
     .notNull(),
 };
 
-export const accountTypeEnum = pgEnum("AccountType", [
+export const accountTypeEnum = pgEnum("finance_account_type", [
   "CHECKING",
   "SAVINGS",
   "CASH",
   "INVESTMENT",
 ]);
 
-export const categoryKindEnum = pgEnum("CategoryKind", [
+export const categoryKindEnum = pgEnum("finance_category_kind", [
   "INCOME",
   "EXPENSE",
   "BOTH",
 ]);
 
-export const transactionKindEnum = pgEnum("TransactionKind", [
+export const transactionKindEnum = pgEnum("finance_transaction_kind", [
   "INCOME",
   "EXPENSE",
 ]);
 
-export const transactionStatusEnum = pgEnum("TransactionStatus", [
+export const transactionStatusEnum = pgEnum("finance_transaction_status", [
   "PENDING",
   "SETTLED",
   "CANCELLED",
 ]);
 
-export const paymentMethodEnum = pgEnum("PaymentMethod", [
+export const paymentMethodEnum = pgEnum("finance_payment_method", [
   "CASH",
   "PIX",
   "DEBIT_CARD",
@@ -56,55 +57,39 @@ export const paymentMethodEnum = pgEnum("PaymentMethod", [
   "CREDIT_CARD",
 ]);
 
-export const invoiceStatusEnum = pgEnum("InvoiceStatus", [
+export const invoiceStatusEnum = pgEnum("finance_invoice_status", [
   "OPEN",
   "CLOSED",
   "OVERDUE",
   "PAID",
 ]);
 
-export const debtStatusEnum = pgEnum("DebtStatus", [
+export const debtStatusEnum = pgEnum("finance_debt_status", [
   "OPEN",
   "OVERDUE",
   "PAID",
   "CANCELLED",
 ]);
 
-export const savingsGoalStatusEnum = pgEnum("SavingsGoalStatus", [
+export const savingsGoalStatusEnum = pgEnum("finance_savings_goal_status", [
   "ACTIVE",
   "COMPLETED",
   "CANCELLED",
 ]);
 
-export const recurrenceFrequencyEnum = pgEnum("RecurrenceFrequency", [
+export const recurrenceFrequencyEnum = pgEnum("finance_recurrence_frequency", [
   "WEEKLY",
   "MONTHLY",
   "YEARLY",
 ]);
 
-export const userTable = pgTable(
-  "user",
+export const financialAccountTable = pgTable(
+  "financial_account",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    clerkId: text("clerk_id").notNull(),
-    email: text("email"),
-    name: text("name"),
-    ...timestamps,
-    deletedAt: timestamp("deleted_at", { withTimezone: true, precision: 3 }),
-  },
-  (t) => ({
-    clerkIdIdx: uniqueIndex("user_clerk_id_unique").on(t.clerkId),
-    emailIdx: uniqueIndex("user_email_unique").on(t.email),
-  }),
-);
-
-export const accountTable = pgTable(
-  "account",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     name: text("name").notNull(),
     type: accountTypeEnum("type").notNull(),
     currency: varchar("currency", { length: 3 }).default("BRL").notNull(),
@@ -115,17 +100,20 @@ export const accountTable = pgTable(
     ...timestamps,
   },
   (t) => ({
-    userNameIdx: uniqueIndex("account_user_id_name_unique").on(
+    userNameIdx: uniqueIndex("financial_account_user_id_name_unique").on(
       t.userId,
       t.name,
     ),
-    userActiveIdx: index("account_user_id_is_active_idx").on(
+    userActiveIdx: index("financial_account_user_id_is_active_idx").on(
       t.userId,
       t.isActive,
     ),
-    userIdIdx: uniqueIndex("account_user_id_id_unique").on(t.userId, t.id),
+    userIdIdx: uniqueIndex("financial_account_user_id_id_unique").on(
+      t.userId,
+      t.id,
+    ),
     initialBalanceChk: check(
-      "account_initial_balance_non_negative_chk",
+      "financial_account_initial_balance_non_negative_chk",
       sql`${t.initialBalanceInCents} >= 0`,
     ),
   }),
@@ -135,9 +123,9 @@ export const categoryTable = pgTable(
   "category",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     name: text("name").notNull(),
     kind: categoryKindEnum("kind").notNull(),
     color: text("color"),
@@ -163,9 +151,9 @@ export const creditCardTable = pgTable(
   "credit_card",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     name: text("name").notNull(),
     lastFour: varchar("last_four", { length: 4 }),
     limitInCents: integer("limit_in_cents").notNull(),
@@ -204,9 +192,9 @@ export const invoiceTable = pgTable(
   "invoice",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     creditCardId: uuid("credit_card_id")
       .notNull()
       .references(() => creditCardTable.id, { onDelete: "restrict" }),
@@ -260,10 +248,10 @@ export const transactionTable = pgTable(
   "transaction",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
-    accountId: uuid("account_id").references(() => accountTable.id, {
+      .references(() => user.id, { onDelete: "restrict" }),
+    accountId: uuid("account_id").references(() => financialAccountTable.id, {
       onDelete: "restrict",
     }),
     categoryId: uuid("category_id")
@@ -353,9 +341,9 @@ export const debtTable = pgTable(
   "debt",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     creditor: text("creditor").notNull(),
     description: text("description").notNull(),
     totalInCents: integer("total_in_cents").notNull(),
@@ -377,15 +365,15 @@ export const debtPaymentTable = pgTable(
   "debt_payment",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     debtId: uuid("debt_id")
       .notNull()
       .references(() => debtTable.id, { onDelete: "restrict" }),
     accountId: uuid("account_id")
       .notNull()
-      .references(() => accountTable.id, { onDelete: "restrict" }),
+      .references(() => financialAccountTable.id, { onDelete: "restrict" }),
     transactionId: uuid("transaction_id").references(
       () => transactionTable.id,
       { onDelete: "restrict" },
@@ -418,9 +406,9 @@ export const savingsGoalTable = pgTable(
   "savings_goal",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     name: text("name").notNull(),
     targetInCents: integer("target_in_cents").notNull(),
     savedInCents: integer("saved_in_cents").notNull().default(0),
@@ -443,15 +431,15 @@ export const savingsContributionTable = pgTable(
   "savings_contribution",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
+      .references(() => user.id, { onDelete: "restrict" }),
     savingsGoalId: uuid("savings_goal_id")
       .notNull()
       .references(() => savingsGoalTable.id, { onDelete: "restrict" }),
     accountId: uuid("account_id")
       .notNull()
-      .references(() => accountTable.id, { onDelete: "restrict" }),
+      .references(() => financialAccountTable.id, { onDelete: "restrict" }),
     transactionId: uuid("transaction_id").references(
       () => transactionTable.id,
       { onDelete: "restrict" },
@@ -482,10 +470,10 @@ export const recurringTransactionTable = pgTable(
   "recurring_transaction",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => userTable.id, { onDelete: "restrict" }),
-    accountId: uuid("account_id").references(() => accountTable.id, {
+      .references(() => user.id, { onDelete: "restrict" }),
+    accountId: uuid("account_id").references(() => financialAccountTable.id, {
       onDelete: "restrict",
     }),
     categoryId: uuid("category_id")
@@ -515,11 +503,8 @@ export const recurringTransactionTable = pgTable(
   }),
 );
 
-export type User = typeof userTable.$inferSelect;
-export type NewUser = typeof userTable.$inferInsert;
-
-export type Account = typeof accountTable.$inferSelect;
-export type NewAccount = typeof accountTable.$inferInsert;
+export type FinancialAccount = typeof financialAccountTable.$inferSelect;
+export type NewFinancialAccount = typeof financialAccountTable.$inferInsert;
 
 export type Category = typeof categoryTable.$inferSelect;
 export type NewCategory = typeof categoryTable.$inferInsert;
