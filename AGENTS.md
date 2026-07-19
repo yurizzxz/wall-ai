@@ -1,163 +1,37 @@
 # AGENTS.md
 
-## Objetivo
+Projeto Next.js App Router + TypeScript.
 
-Este projeto utiliza Next.js (App Router) com TypeScript.
-Não execute comandos no terminal previamente sem permissão.
+## Conduta
 
-Sempre priorize:
-- código limpo
-- simplicidade
-- performance
-- tipagem forte
-- componentes reutilizáveis
+- Discorde quando necessário; explique erro, causa e decisão como especialista em Next.js, React e arquitetura.
+- Seja direto, conciso e didático. Explique código gerado, exceto em `/caveman`.
+- Ajude em decisões arquiteturais; não execute comandos no terminal sem permissão prévia.
 
----
+## Prioridades
+
+Código limpo, simples, performático, fortemente tipado, reutilizável e pronto para produção.
 
 ## Stack
 
-- Next.js
-- TypeScript
-- React
-- Tailwind CSS
-- Prisma
-- PostgreSQL
-- Zod
-
----
+Next.js, TypeScript, React, Tailwind CSS, Prisma, PostgreSQL, Zod.
 
 ## Estrutura
 
-app/
-components/
-lib/
-services/
-hooks/
-types/
-prisma/
+Use `app/`, `components/`, `lib/`, `modules/`, `services/`, `hooks/`, `types/`. Não crie fora delas sem necessidade.
 
-Nunca criar arquivos fora dessa estrutura sem necessidade.
+## Regras
 
----
-
-## Componentes
-
-- Componentes devem ser pequenos.
-- Evite componentes acima de 200 linhas.
-- Extraia lógica para hooks quando fizer sentido.
-- Evite duplicação.
-
----
-
-## Tipagem
-
-Nunca utilizar:
-
-```ts
-any
-```
-
-Prefira:
-
-```ts
-unknown
-```
-
-ou criar interfaces.
-
----
-
-## Imports
-
-Sempre utilizar aliases.
-
-Exemplo:
-
-```ts
-import Button from "@/components/Button";
-```
-
-Evitar:
-
-```ts
-../../../components/Button
-```
-
----
-
-## Server Components
-
-Sempre que possível utilizar Server Components.
-
-Adicionar:
-
-```ts
-"use client"
-```
-
-apenas quando necessário.
-
----
-
-## Banco de dados
-
-Toda consulta deve ficar em:
-
-```
-services/
-```
-
-Nunca acessar Prisma diretamente dentro de páginas.
-
----
-
-## API
-
-Validar entradas usando Zod.
-
-Nunca confiar nos dados enviados pelo cliente.
-
----
-
-## Estilo
-
-Utilizar Tailwind.
-
-Evitar CSS separado.
-
----
-
-## Código
-
-Preferir:
-
-- early return
-- funções pequenas
-- nomes claros
-- evitar comentários desnecessários
-
----
+- Componentes pequenos, preferencialmente abaixo de 200 linhas. Extraia hooks quando útil; evite duplicação.
+- Nunca use `any`; use `unknown` ou tipos explícitos.
+- Use aliases (`@/...`), nunca imports relativos profundos.
+- Prefira Server Components. Use `"use client"` só quando necessário.
+- Acesso Prisma somente em `services/`, nunca em páginas.
+- Valide toda entrada de API com Zod; nunca confie no cliente.
+- Use Tailwind; evite CSS separado.
+- Prefira early returns, funções pequenas, nomes claros, poucos comentários.
+- Não deixe TODOs, funções vazias, mocks não solicitados ou código ilustrativo.
 
 ## Antes de finalizar
 
-Sempre verificar:
-
-- TypeScript
-- ESLint
-- imports não utilizados
-- código morto
-- possíveis bugs
-
----
-
-## Ao gerar código
-
-Sempre retornar código pronto para produção.
-
-Nunca criar código apenas ilustrativo.
-
-Nunca deixar TODOs.
-
-Nunca deixar funções vazias.
-
-Nunca utilizar mocks, exceto quando solicitado.
+Verifique TypeScript, ESLint, imports não usados, código morto e possíveis bugs.
