@@ -10,7 +10,6 @@ import { createRepositories } from "@/services/repositories";
 export const createTransactionAction = authenticatedAction
   .inputSchema(createTransactionSchema)
   .action(async ({ parsedInput, ctx }) => {
-    
     const { accounts, categories, creditCards, transactions } =
       createRepositories(ctx.user.id);
 

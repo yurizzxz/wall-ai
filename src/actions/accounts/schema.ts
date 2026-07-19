@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { entityIdSchema } from "@/actions/shared/schema";
+
 export const createAccountSchema = z.object({
   name: z
     .string()
@@ -15,3 +17,7 @@ export const createAccountSchema = z.object({
 });
 
 export type CreateAccountActionInput = z.infer<typeof createAccountSchema>;
+
+export const deactivateAccountSchema = z.object({
+  accountId: entityIdSchema,
+});
