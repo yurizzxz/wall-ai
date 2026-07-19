@@ -15,7 +15,11 @@ import {
   type CreateTransactionInput,
 } from "../domain/transaction";
 
-export type TransactionRecord = CreateTransactionInput & { id: string };
+export type TransactionRecord = CreateTransactionInput & {
+  id: string;
+  paidInvoiceId?: string;
+  sourceRecurringTransactionId?: string;
+};
 
 export type CreateTransactionDependencies = {
   accounts: {

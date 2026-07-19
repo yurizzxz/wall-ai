@@ -4,35 +4,14 @@ import { db } from "@/db";
 import {
   savingsContributionTable,
   savingsGoalTable,
+  transactionTable,
 } from "@/db/schema";
-import type { AmountInCents } from "@/modules/shared/domain/money";
-import type {
-  SavingsGoal,
-  SavingsGoalStatus,
-} from "@/modules/savings-goals/domain/savings-goal";
+import type { CreateSavingsGoalInput } from "@/modules/savings-goals/application/create-savings-goal";
+import type { RecordSavingsContributionInput } from "@/modules/savings-goals/application/contribute-to-savings-goal";
+import type { SavingsGoal } from "@/modules/savings-goals/domain/savings-goal";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
-export type CreateSavingsGoalInput = {
-  userId: string;
-  name: string;
-  targetInCents: AmountInCents;
-  deadline?: Date;
-};
-
-export type RecordSavingsContributionInput = {
-  userId: string;
-  savingsGoalId: string;
-  accountId: string;
-  transactionId?: string;
-  amountInCents: AmountInCents;
-  contributedAt: Date;
-  nextSavedInCents: AmountInCents;
-  nextStatus: SavingsGoalStatus;
-};
-
-function toSavingsGoal(
-  row: typeof savingsGoalTable.$inferSelect,
-): SavingsGoal {
+function toSavingsGoal(row: typeof savingsGoalTable.$inferSelect): SavingsGoal {
   return {
     id: row.id,
     userId: row.userId,
@@ -46,10 +25,7 @@ function toSavingsGoal(
 
 export function createSavingsGoalRepository(authenticatedUserId: string) {
   return {
-    async findById(
-      userId: string,
-      savingsGoalId: string,
-    ): Promise<SavingsGoal | null> {
+    async findById(userId: string, savingsGoalId: string): Promise<SavingsGoal | null> {
       assertUserScope(authenticatedUserId, userId);
 
       const [goal] = await db
@@ -111,35 +87,51 @@ export function createSavingsGoalRepository(authenticatedUserId: string) {
       return toSavingsGoal(goal);
     },
 
-    async recordContribution(
-      input: RecordSavingsContributionInput,
-    ): Promise<SavingsGoal> {
+    async recordContribution(input: RecordSavingsContributionInput): Promise<SavingsGoal> {
       assertUserScope(authenticatedUserId, input.userId);
 
-      return db.transaction(async (databaseTransaction) => {
-        const [goal] = await databaseTransaction
+      return db.transaction(async (tx) => {
+        const [goal] = await tx
           .update(savingsGoalTable)
-          .set({
-            savedInCents: input.nextSavedInCents,
-            status: input.nextStatus,
-          })
+          .set({ savedInCents: input.nextSavedInCents, status: input.nextStatus })
           .where(
             and(
               eq(savingsGoalTable.id, input.savingsGoalId),
               eq(savingsGoalTable.userId, authenticatedUserId),
+              eq(savingsGoalTable.savedInCents, input.expectedSavedInCents),
             ),
           )
           .returning();
 
         if (!goal) {
-          throw new Error("Cofrinho não encontrado.");
+          throw new Error("O cofrinho foi alterado por outra operação.");
         }
 
-        await databaseTransaction.insert(savingsContributionTable).values({
+        const [transaction] = await tx
+          .insert(transactionTable)
+          .values({
+            userId: authenticatedUserId,
+            accountId: input.accountId,
+            categoryId: input.categoryId,
+            description: input.description,
+            amountInCents: input.amountInCents,
+            kind: "EXPENSE",
+            status: "SETTLED",
+            paymentMethod: "BANK_TRANSFER",
+            occurredAt: input.contributedAt,
+            settledAt: input.contributedAt,
+          })
+          .returning({ id: transactionTable.id });
+
+        if (!transaction) {
+          throw new Error("Não foi possível registrar o aporte.");
+        }
+
+        await tx.insert(savingsContributionTable).values({
           userId: authenticatedUserId,
           savingsGoalId: input.savingsGoalId,
           accountId: input.accountId,
-          transactionId: input.transactionId,
+          transactionId: transaction.id,
           amountInCents: input.amountInCents,
           contributedAt: input.contributedAt,
         });

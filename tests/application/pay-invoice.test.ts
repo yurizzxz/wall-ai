@@ -50,6 +50,18 @@ function createDependencies(
         };
       },
     },
+    categories: {
+      async findById(userId, categoryId) {
+        if (userId !== "user-1" || categoryId !== "expense-category") return null;
+        return {
+          id: categoryId,
+          userId,
+          name: "Pagamento de fatura",
+          kind: "EXPENSE",
+          isActive: true,
+        };
+      },
+    },
     now: () => new Date("2026-07-15T12:00:00Z"),
   };
 }
@@ -62,7 +74,9 @@ describe("payInvoice", () => {
         userId: "user-1",
         invoiceId: "invoice-1",
         accountId: "account-1",
+        categoryId: "expense-category",
         amountInCents: 30_000,
+        paymentMethod: "PIX",
       },
       createDependencies(applied),
     );
@@ -83,7 +97,9 @@ describe("payInvoice", () => {
             userId: "user-1",
             invoiceId: "invoice-1",
             accountId: "account-1",
+            categoryId: "expense-category",
             amountInCents: 30_001,
+            paymentMethod: "PIX",
           },
           createDependencies(applied),
         ),

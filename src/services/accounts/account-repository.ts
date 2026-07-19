@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { financialAccountTable } from "@/db/schema";
+import { financialAccountTable, transactionTable } from "@/db/schema";
 import type {
   AccountRepository,
   CreateAccountInput,
@@ -12,6 +12,8 @@ import { assertUserScope } from "@/services/shared/assert-user-scope";
 export type DrizzleAccountRepository = AccountRepository & {
   findById(userId: string, accountId: string): Promise<Account | null>;
   list(): Promise<Account[]>;
+  hasPendingTransactions(userId: string, accountId: string): Promise<boolean>;
+  setActive(userId: string, accountId: string, isActive: boolean): Promise<Account>;
 };
 
 export function createAccountRepository(
@@ -58,6 +60,45 @@ export function createAccountRepository(
         .from(financialAccountTable)
         .where(eq(financialAccountTable.userId, authenticatedUserId))
         .orderBy(asc(financialAccountTable.name));
+    },
+
+    async hasPendingTransactions(userId, accountId) {
+      assertUserScope(authenticatedUserId, userId);
+
+      const [transaction] = await db
+        .select({ id: transactionTable.id })
+        .from(transactionTable)
+        .where(
+          and(
+            eq(transactionTable.userId, authenticatedUserId),
+            eq(transactionTable.accountId, accountId),
+            eq(transactionTable.status, "PENDING"),
+          ),
+        )
+        .limit(1);
+
+      return Boolean(transaction);
+    },
+
+    async setActive(userId, accountId, isActive) {
+      assertUserScope(authenticatedUserId, userId);
+
+      const [account] = await db
+        .update(financialAccountTable)
+        .set({ isActive })
+        .where(
+          and(
+            eq(financialAccountTable.id, accountId),
+            eq(financialAccountTable.userId, authenticatedUserId),
+          ),
+        )
+        .returning();
+
+      if (!account) {
+        throw new Error("Conta não encontrada.");
+      }
+
+      return account;
     },
 
     async create(input: CreateAccountInput) {

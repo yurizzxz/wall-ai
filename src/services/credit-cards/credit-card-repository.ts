@@ -7,13 +7,10 @@ import {
   invoiceTable,
   transactionTable,
 } from "@/db/schema";
+import type { CreateCreditCardInput } from "@/modules/credit-cards/application/create-credit-card";
 import type { CreditCard } from "@/modules/credit-cards/domain/credit-card";
 import type { AmountInCents } from "@/modules/shared/domain/money";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
-
-export type CreateCreditCardInput = Omit<CreditCard, "id" | "isActive"> & {
-  lastFour?: string;
-};
 
 type CreditCardWithCommittedAmount = {
   card: CreditCard;
@@ -60,6 +57,23 @@ export function createCreditCardRepository(authenticatedUserId: string) {
   }
 
   return {
+    async findByName(userId: string, name: string): Promise<CreditCard | null> {
+      assertUserScope(authenticatedUserId, userId);
+
+      const [card] = await db
+        .select()
+        .from(creditCardTable)
+        .where(
+          and(
+            eq(creditCardTable.userId, authenticatedUserId),
+            eq(creditCardTable.name, name),
+          ),
+        )
+        .limit(1);
+
+      return card ?? null;
+    },
+
     async findById(
       userId: string,
       creditCardId: string,
@@ -112,6 +126,31 @@ export function createCreditCardRepository(authenticatedUserId: string) {
 
       if (!card) {
         throw new Error("Não foi possível criar o cartão.");
+      }
+
+      return card;
+    },
+
+    async setActive(
+      userId: string,
+      creditCardId: string,
+      isActive: boolean,
+    ): Promise<CreditCard> {
+      assertUserScope(authenticatedUserId, userId);
+
+      const [card] = await db
+        .update(creditCardTable)
+        .set({ isActive })
+        .where(
+          and(
+            eq(creditCardTable.id, creditCardId),
+            eq(creditCardTable.userId, authenticatedUserId),
+          ),
+        )
+        .returning();
+
+      if (!card) {
+        throw new Error("Cartão não encontrado.");
       }
 
       return card;

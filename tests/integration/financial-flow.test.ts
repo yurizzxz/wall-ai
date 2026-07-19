@@ -201,6 +201,7 @@ describe("financial flow", () => {
 
     const invoiceDependencies: PayInvoiceDependencies = {
       accounts: transactionDependencies.accounts,
+      categories: transactionDependencies.categories,
       invoices: {
         async findById(ownerId, invoiceId) {
           return invoice.userId === ownerId && invoice.id === invoiceId
@@ -218,6 +219,19 @@ describe("financial flow", () => {
             direction: "DEBIT",
             status: "SETTLED",
           });
+          transactions.push({
+            id: `transaction-${transactions.length + 1}`,
+            userId,
+            accountId: input.accountId,
+            categoryId: input.categoryId,
+            paidInvoiceId: input.invoiceId,
+            description: input.description,
+            amountInCents: input.amountInCents,
+            kind: "EXPENSE",
+            status: "SETTLED",
+            paymentMethod: input.paymentMethod,
+            occurredAt: input.paidAt,
+          });
           return invoice;
         },
       },
@@ -229,7 +243,9 @@ describe("financial flow", () => {
         userId,
         invoiceId: invoice.id,
         accountId: account.id,
+        categoryId: "expense-category",
         amountInCents: 30_000,
+        paymentMethod: "PIX",
       },
       invoiceDependencies,
     );
@@ -239,6 +255,6 @@ describe("financial flow", () => {
       calculateAccountBalance(account.initialBalanceInCents, movements),
       457_500,
     );
-    assert.equal(transactions.length, 3);
+    assert.equal(transactions.length, 4);
   });
 });

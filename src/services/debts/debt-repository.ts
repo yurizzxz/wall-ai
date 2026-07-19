@@ -1,29 +1,11 @@
 import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { debtPaymentTable, debtTable } from "@/db/schema";
-import type { Debt, DebtStatus } from "@/modules/debts/domain/debt";
-import type { AmountInCents } from "@/modules/shared/domain/money";
+import { debtPaymentTable, debtTable, transactionTable } from "@/db/schema";
+import type { CreateDebtInput } from "@/modules/debts/application/create-debt";
+import type { RecordDebtPaymentInput } from "@/modules/debts/application/pay-debt";
+import type { Debt } from "@/modules/debts/domain/debt";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
-
-export type CreateDebtInput = {
-  userId: string;
-  creditor: string;
-  description: string;
-  totalInCents: AmountInCents;
-  dueAt?: Date;
-};
-
-export type RecordDebtPaymentInput = {
-  userId: string;
-  debtId: string;
-  accountId: string;
-  transactionId?: string;
-  amountInCents: AmountInCents;
-  paidAt: Date;
-  nextPaidInCents: AmountInCents;
-  nextStatus: DebtStatus;
-};
 
 function toDebt(row: typeof debtTable.$inferSelect): Debt {
   return {
@@ -91,8 +73,8 @@ export function createDebtRepository(authenticatedUserId: string) {
     async recordPayment(input: RecordDebtPaymentInput): Promise<Debt> {
       assertUserScope(authenticatedUserId, input.userId);
 
-      return db.transaction(async (databaseTransaction) => {
-        const [debt] = await databaseTransaction
+      return db.transaction(async (tx) => {
+        const [debt] = await tx
           .update(debtTable)
           .set({
             paidInCents: input.nextPaidInCents,
@@ -102,19 +84,40 @@ export function createDebtRepository(authenticatedUserId: string) {
             and(
               eq(debtTable.id, input.debtId),
               eq(debtTable.userId, authenticatedUserId),
+              eq(debtTable.paidInCents, input.expectedPaidInCents),
             ),
           )
           .returning();
 
         if (!debt) {
-          throw new Error("Dívida não encontrada.");
+          throw new Error("A dívida foi alterada por outra operação.");
         }
 
-        await databaseTransaction.insert(debtPaymentTable).values({
+        const [transaction] = await tx
+          .insert(transactionTable)
+          .values({
+            userId: authenticatedUserId,
+            accountId: input.accountId,
+            categoryId: input.categoryId,
+            description: input.description,
+            amountInCents: input.amountInCents,
+            kind: "EXPENSE",
+            status: "SETTLED",
+            paymentMethod: input.paymentMethod,
+            occurredAt: input.paidAt,
+            settledAt: input.paidAt,
+          })
+          .returning({ id: transactionTable.id });
+
+        if (!transaction) {
+          throw new Error("Não foi possível registrar o pagamento da dívida.");
+        }
+
+        await tx.insert(debtPaymentTable).values({
           userId: authenticatedUserId,
           debtId: input.debtId,
           accountId: input.accountId,
-          transactionId: input.transactionId,
+          transactionId: transaction.id,
           amountInCents: input.amountInCents,
           paidAt: input.paidAt,
         });

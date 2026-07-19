@@ -28,7 +28,7 @@ export const createTransactionAction = authenticatedAction
         },
       );
 
-      revalidatePath("/");
+      revalidatePath("/dashboard/transactions");
 
       return { ok: true, id: transaction.id };
     } catch {

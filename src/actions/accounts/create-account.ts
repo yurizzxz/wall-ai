@@ -21,7 +21,7 @@ export const createAccountAction = authenticatedAction
         accounts,
       );
 
-      revalidatePath("/");
+      revalidatePath("/dashboard/accounts");
 
       return { ok: true, id: account.id };
     } catch {

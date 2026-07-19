@@ -12,6 +12,8 @@ export type PaymentMethod =
   | "BANK_TRANSFER"
   | "CREDIT_CARD";
 
+export type AccountPaymentMethod = Exclude<PaymentMethod, "CREDIT_CARD">;
+
 export type CreateTransactionInput = {
   userId: string;
   description: string;

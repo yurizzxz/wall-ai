@@ -1,10 +1,12 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, ne } from "drizzle-orm";
 
 import { db } from "@/db";
-import { invoiceTable } from "@/db/schema";
-import type {
-  ApplyInvoicePaymentInput,
-} from "@/modules/invoices/application/pay-invoice";
+import {
+  creditCardInstallmentTable,
+  invoiceTable,
+  transactionTable,
+} from "@/db/schema";
+import type { ApplyInvoicePaymentInput } from "@/modules/invoices/application/pay-invoice";
 import type { Invoice } from "@/modules/invoices/domain/invoice";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
@@ -38,26 +40,120 @@ export function createInvoiceRepository(authenticatedUserId: string) {
     async applyPayment(input: ApplyInvoicePaymentInput): Promise<Invoice> {
       assertUserScope(authenticatedUserId, input.userId);
 
-      const [invoice] = await db
-        .update(invoiceTable)
-        .set({
-          paidInCents: input.nextPaidInCents,
-          status: input.nextStatus,
-          paidAt: input.nextStatus === "PAID" ? input.paidAt : null,
-        })
-        .where(
-          and(
-            eq(invoiceTable.id, input.invoiceId),
-            eq(invoiceTable.userId, authenticatedUserId),
-          ),
-        )
-        .returning();
+      return db.transaction(async (tx) => {
+        const [invoice] = await tx
+          .update(invoiceTable)
+          .set({
+            paidInCents: input.nextPaidInCents,
+            status: input.nextStatus,
+            paidAt: input.nextStatus === "PAID" ? input.paidAt : null,
+          })
+          .where(
+            and(
+              eq(invoiceTable.id, input.invoiceId),
+              eq(invoiceTable.userId, authenticatedUserId),
+              eq(invoiceTable.paidInCents, input.expectedPaidInCents),
+            ),
+          )
+          .returning();
 
-      if (!invoice) {
-        throw new Error("Fatura não encontrada.");
-      }
+        if (!invoice) {
+          throw new Error("A fatura foi alterada por outra operação.");
+        }
 
-      return invoice;
+        await tx.insert(transactionTable).values({
+          userId: authenticatedUserId,
+          accountId: input.accountId,
+          categoryId: input.categoryId,
+          paidInvoiceId: input.invoiceId,
+          description: input.description,
+          amountInCents: input.amountInCents,
+          kind: "EXPENSE",
+          status: "SETTLED",
+          paymentMethod: input.paymentMethod,
+          occurredAt: input.paidAt,
+          settledAt: input.paidAt,
+        });
+
+        return invoice;
+      });
+    },
+
+    async close(userId: string, invoiceId: string): Promise<Invoice> {
+      assertUserScope(authenticatedUserId, userId);
+
+      return db.transaction(async (tx) => {
+        const [currentInvoice] = await tx
+          .select()
+          .from(invoiceTable)
+          .where(
+            and(
+              eq(invoiceTable.id, invoiceId),
+              eq(invoiceTable.userId, authenticatedUserId),
+              eq(invoiceTable.status, "OPEN"),
+            ),
+          )
+          .limit(1);
+
+        if (!currentInvoice) {
+          throw new Error("Fatura aberta não encontrada.");
+        }
+
+        const installments = await tx
+          .select({
+            id: creditCardInstallmentTable.id,
+            amountInCents: creditCardInstallmentTable.amountInCents,
+          })
+          .from(creditCardInstallmentTable)
+          .innerJoin(
+            transactionTable,
+            eq(creditCardInstallmentTable.purchaseId, transactionTable.id),
+          )
+          .where(
+            and(
+              eq(transactionTable.userId, authenticatedUserId),
+              eq(transactionTable.creditCardId, currentInvoice.creditCardId),
+              ne(transactionTable.status, "CANCELLED"),
+              isNull(creditCardInstallmentTable.invoiceId),
+              gte(creditCardInstallmentTable.dueAt, currentInvoice.periodStart),
+              lte(creditCardInstallmentTable.dueAt, currentInvoice.periodEnd),
+            ),
+          );
+
+        if (installments.length > 0) {
+          await tx
+            .update(creditCardInstallmentTable)
+            .set({ invoiceId })
+            .where(
+              inArray(
+                creditCardInstallmentTable.id,
+                installments.map((installment) => installment.id),
+              ),
+            );
+        }
+
+        const totalInCents = installments.reduce(
+          (total, installment) => total + installment.amountInCents,
+          0,
+        );
+        const [invoice] = await tx
+          .update(invoiceTable)
+          .set({ totalInCents, status: "CLOSED" })
+          .where(
+            and(
+              eq(invoiceTable.id, invoiceId),
+              eq(invoiceTable.userId, authenticatedUserId),
+              eq(invoiceTable.status, "OPEN"),
+            ),
+          )
+          .returning();
+
+        if (!invoice) {
+          throw new Error("A fatura foi fechada por outra operação.");
+        }
+
+        return invoice;
+      });
     },
   };
 }

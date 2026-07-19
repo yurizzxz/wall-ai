@@ -14,7 +14,12 @@ export type CreditCard = {
   isActive: boolean;
 };
 
-export function validateCreditCard(card: CreditCard): CreditCard {
+type CreditCardDetails = Pick<
+  CreditCard,
+  "name" | "limitInCents" | "closingDay" | "dueDay"
+>;
+
+export function validateCreditCard<T extends CreditCardDetails>(card: T): T {
   if (!card.name.trim()) {
     throw new Error("O nome do cartão é obrigatório.");
   }

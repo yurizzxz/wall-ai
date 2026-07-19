@@ -3,20 +3,18 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { categoryTable } from "@/db/schema";
 import type {
-  Category,
-  CategoryKind,
-} from "@/modules/categories/domain/category";
+  CategoryRepository,
+  CreateCategoryInput,
+} from "@/modules/categories/application/create-category";
+import type { Category } from "@/modules/categories/domain/category";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
-export type CreateCategoryInput = {
-  userId: string;
-  name: string;
-  kind: CategoryKind;
-  color?: string;
-  icon?: string;
-};
-
-export function createCategoryRepository(authenticatedUserId: string) {
+export function createCategoryRepository(
+  authenticatedUserId: string,
+): CategoryRepository & {
+  findById(userId: string, categoryId: string): Promise<Category | null>;
+  list(): Promise<Category[]>;
+} {
   return {
     async findById(userId: string, categoryId: string): Promise<Category | null> {
       assertUserScope(authenticatedUserId, userId);
@@ -41,6 +39,24 @@ export function createCategoryRepository(authenticatedUserId: string) {
         .from(categoryTable)
         .where(eq(categoryTable.userId, authenticatedUserId))
         .orderBy(asc(categoryTable.name));
+    },
+
+    async findByNameAndKind(userId, name, kind) {
+      assertUserScope(authenticatedUserId, userId);
+
+      const [category] = await db
+        .select()
+        .from(categoryTable)
+        .where(
+          and(
+            eq(categoryTable.userId, authenticatedUserId),
+            eq(categoryTable.name, name),
+            eq(categoryTable.kind, kind),
+          ),
+        )
+        .limit(1);
+
+      return category ?? null;
     },
 
     async create(input: CreateCategoryInput): Promise<Category> {

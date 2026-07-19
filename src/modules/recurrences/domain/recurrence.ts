@@ -22,9 +22,17 @@ export type RecurringTransaction = {
   isActive: boolean;
 };
 
-export function validateRecurrence(
-  recurrence: RecurringTransaction,
-): RecurringTransaction {
+type RecurrenceDetails = Pick<
+  RecurringTransaction,
+  | "description"
+  | "amountInCents"
+  | "nextOccurrenceAt"
+  | "endsAt"
+>;
+
+export function validateRecurrence<T extends RecurrenceDetails>(
+  recurrence: T,
+): T {
   if (!recurrence.description.trim()) {
     throw new Error("A descrição da recorrência é obrigatória.");
   }
