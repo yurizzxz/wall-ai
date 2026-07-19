@@ -5,14 +5,18 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 
-import { signUpAction } from "@/actions/auth";
 import {
   signUpSchema,
   type SignUpInput,
 } from "@/actions/auth/schema";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 
 export function SignUpForm() {
-  const [isPending, startTransition] = useTransition();
+  const [isPending] = useTransition();
+
+  const router = useRouter();
+
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -23,14 +27,22 @@ export function SignUpForm() {
     },
   });
 
-  function onSubmit(input: SignUpInput) {
-    startTransition(async () => {
-      const result = await signUpAction(input);
+  async function onSubmit(input: SignUpInput) {
+    form.clearErrors("root");
 
-      if (result?.ok === false) {
-        form.setError("root", { message: result.message });
-      }
-    });
+    const { error } = await authClient.signUp.email(input);
+
+    if (error) {
+      form.setError("root", {
+        type: "server",
+        message: "Erro ao criar conta. Tente novamente.",
+      });
+
+      return;
+    }
+
+    router.replace("/");
+    router.refresh();
   }
 
   return (

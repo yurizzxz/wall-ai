@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 
-import { signInAction } from "@/actions/auth";
-import {
-  signInSchema,
-  type SignInInput,
-} from "@/actions/auth/schema";
+import { signInSchema, type SignInInput } from "@/actions/auth/schema";
+import { GoogleSignInButton } from "./google-login-button";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 
 export function SignInForm() {
-  const [isPending, startTransition] = useTransition();
+  const [isPending] = useTransition();
+
+  const router = useRouter();
+
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -21,14 +23,22 @@ export function SignInForm() {
     },
   });
 
-  function onSubmit(input: SignInInput) {
-    startTransition(async () => {
-      const result = await signInAction(input);
+  async function onSubmit(input: SignInInput) {
+    form.clearErrors("root");
 
-      if (result?.ok === false) {
-        form.setError("root", { message: result.message });
-      }
-    });
+    const { error } = await authClient.signIn.email(input);
+
+    if (error) {
+      form.setError("root", {
+        type: "server",
+        message: "E-mail ou senha inválidos.",
+      });
+
+      return;
+    }
+
+    router.replace("/");
+    router.refresh();
   }
 
   return (
@@ -36,6 +46,7 @@ export function SignInForm() {
       onSubmit={form.handleSubmit(onSubmit)}
       className="flex w-full max-w-sm flex-col gap-4"
     >
+      <GoogleSignInButton />
       <div className="flex flex-col gap-1">
         <label htmlFor="email">E-mail</label>
         <input
