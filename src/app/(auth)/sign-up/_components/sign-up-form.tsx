@@ -41,7 +41,7 @@ export function SignUpForm() {
       return;
     }
 
-    router.replace("/");
+    router.replace("/dashboard");
     router.refresh();
   }
 
