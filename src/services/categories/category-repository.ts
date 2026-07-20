@@ -6,6 +6,10 @@ import type {
   CategoryRepository,
   CreateCategoryInput,
 } from "@/modules/categories/application/create-category";
+import type {
+  CategoryListItem,
+  ListCategoriesRepository,
+} from "@/modules/categories/application/list-categories";
 import type { Category } from "@/modules/categories/domain/category";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
@@ -14,7 +18,7 @@ export function createCategoryRepository(
 ): CategoryRepository & {
   findById(userId: string, categoryId: string): Promise<Category | null>;
   list(): Promise<Category[]>;
-} {
+} & ListCategoriesRepository {
   return {
     async findById(userId: string, categoryId: string): Promise<Category | null> {
       assertUserScope(authenticatedUserId, userId);
@@ -39,6 +43,22 @@ export function createCategoryRepository(
         .from(categoryTable)
         .where(eq(categoryTable.userId, authenticatedUserId))
         .orderBy(asc(categoryTable.name));
+    },
+
+    async listForUser(userId): Promise<CategoryListItem[]> {
+      assertUserScope(authenticatedUserId, userId);
+
+      const categories = await db
+        .select()
+        .from(categoryTable)
+        .where(eq(categoryTable.userId, authenticatedUserId))
+        .orderBy(asc(categoryTable.name));
+
+      return categories.map((category) => ({
+        ...category,
+        color: category.color ?? undefined,
+        icon: category.icon ?? undefined,
+      }));
     },
 
     async findByNameAndKind(userId, name, kind) {

@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { financialAccountTable, transactionTable } from "@/db/schema";
@@ -6,6 +6,10 @@ import type {
   AccountRepository,
   CreateAccountInput,
 } from "@/modules/accounts/application/create-account";
+import type {
+  AccountListItem,
+  ListAccountsRepository,
+} from "@/modules/accounts/application/list-accounts";
 import type { Account } from "@/modules/accounts/domain/account";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
@@ -14,7 +18,7 @@ export type DrizzleAccountRepository = AccountRepository & {
   list(): Promise<Account[]>;
   hasPendingTransactions(userId: string, accountId: string): Promise<boolean>;
   setActive(userId: string, accountId: string, isActive: boolean): Promise<Account>;
-};
+} & ListAccountsRepository;
 
 export function createAccountRepository(
   authenticatedUserId: string,
@@ -60,6 +64,60 @@ export function createAccountRepository(
         .from(financialAccountTable)
         .where(eq(financialAccountTable.userId, authenticatedUserId))
         .orderBy(asc(financialAccountTable.name));
+    },
+
+    async listWithBalance(userId): Promise<AccountListItem[]> {
+      assertUserScope(authenticatedUserId, userId);
+
+      const accounts = await db
+        .select({
+          id: financialAccountTable.id,
+          userId: financialAccountTable.userId,
+          name: financialAccountTable.name,
+          type: financialAccountTable.type,
+          currency: financialAccountTable.currency,
+          initialBalanceInCents: financialAccountTable.initialBalanceInCents,
+          isActive: financialAccountTable.isActive,
+          balanceInCents: sql<number>`
+            ${financialAccountTable.initialBalanceInCents}
+            + coalesce(sum(
+              case
+                when ${transactionTable.status} = 'SETTLED'
+                  and ${transactionTable.paymentMethod} <> 'CREDIT_CARD'
+                then case
+                  when ${transactionTable.kind} = 'INCOME'
+                    then ${transactionTable.amountInCents}
+                  else -${transactionTable.amountInCents}
+                end
+                else 0
+              end
+            ), 0)
+          `,
+        })
+        .from(financialAccountTable)
+        .leftJoin(
+          transactionTable,
+          and(
+            eq(transactionTable.accountId, financialAccountTable.id),
+            eq(transactionTable.userId, authenticatedUserId),
+          ),
+        )
+        .where(eq(financialAccountTable.userId, authenticatedUserId))
+        .groupBy(
+          financialAccountTable.id,
+          financialAccountTable.userId,
+          financialAccountTable.name,
+          financialAccountTable.type,
+          financialAccountTable.currency,
+          financialAccountTable.initialBalanceInCents,
+          financialAccountTable.isActive,
+        )
+        .orderBy(asc(financialAccountTable.name));
+
+      return accounts.map((account) => ({
+        ...account,
+        balanceInCents: Number(account.balanceInCents),
+      }));
     },
 
     async hasPendingTransactions(userId, accountId) {

@@ -3,10 +3,15 @@ import { and, asc, eq, gte, inArray, isNull, lte, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   creditCardInstallmentTable,
+  creditCardTable,
   invoiceTable,
   transactionTable,
 } from "@/db/schema";
 import type { ApplyInvoicePaymentInput } from "@/modules/invoices/application/pay-invoice";
+import type {
+  InvoiceListItem,
+  ListInvoicesInput,
+} from "@/modules/invoices/application/list-invoices";
 import type { Invoice } from "@/modules/invoices/domain/invoice";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
@@ -35,6 +40,42 @@ export function createInvoiceRepository(authenticatedUserId: string) {
         .from(invoiceTable)
         .where(eq(invoiceTable.userId, authenticatedUserId))
         .orderBy(asc(invoiceTable.dueAt));
+    },
+
+    async listForUser(input: ListInvoicesInput): Promise<InvoiceListItem[]> {
+      assertUserScope(authenticatedUserId, input.userId);
+
+      const conditions = [eq(invoiceTable.userId, authenticatedUserId)];
+
+      if (input.status) {
+        conditions.push(eq(invoiceTable.status, input.status));
+      }
+
+      const invoices = await db
+        .select({
+          invoice: invoiceTable,
+          creditCardName: creditCardTable.name,
+        })
+        .from(invoiceTable)
+        .innerJoin(
+          creditCardTable,
+          and(
+            eq(creditCardTable.id, invoiceTable.creditCardId),
+            eq(creditCardTable.userId, authenticatedUserId),
+          ),
+        )
+        .where(and(...conditions))
+        .orderBy(asc(invoiceTable.dueAt));
+
+      return invoices.map(({ invoice, creditCardName }) => ({
+        ...invoice,
+        paidAt: invoice.paidAt ?? undefined,
+        creditCardName,
+        outstandingInCents: Math.max(
+          0,
+          invoice.totalInCents - invoice.paidInCents,
+        ),
+      }));
     },
 
     async applyPayment(input: ApplyInvoicePaymentInput): Promise<Invoice> {

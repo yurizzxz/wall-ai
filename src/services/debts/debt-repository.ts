@@ -3,6 +3,10 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { debtPaymentTable, debtTable, transactionTable } from "@/db/schema";
 import type { CreateDebtInput } from "@/modules/debts/application/create-debt";
+import type {
+  DebtListItem,
+  ListDebtsInput,
+} from "@/modules/debts/application/list-debts";
 import type { RecordDebtPaymentInput } from "@/modules/debts/application/pay-debt";
 import type { Debt } from "@/modules/debts/domain/debt";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
@@ -47,6 +51,30 @@ export function createDebtRepository(authenticatedUserId: string) {
         .orderBy(desc(debtTable.createdAt));
 
       return debts.map(toDebt);
+    },
+
+    async listForUser(input: ListDebtsInput): Promise<DebtListItem[]> {
+      assertUserScope(authenticatedUserId, input.userId);
+
+      const conditions = [eq(debtTable.userId, authenticatedUserId)];
+
+      if (input.status) {
+        conditions.push(eq(debtTable.status, input.status));
+      }
+
+      const debts = await db
+        .select()
+        .from(debtTable)
+        .where(and(...conditions))
+        .orderBy(desc(debtTable.createdAt));
+
+      return debts.map((debt) => ({
+        ...toDebt(debt),
+        outstandingInCents: Math.max(
+          0,
+          debt.totalInCents - debt.paidInCents,
+        ),
+      }));
     },
 
     async create(input: CreateDebtInput): Promise<Debt> {

@@ -2,11 +2,18 @@ import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
+  categoryTable,
   creditCardInstallmentTable,
+  creditCardTable,
+  financialAccountTable,
   recurringTransactionTable,
   transactionTable,
 } from "@/db/schema";
 import type { CreateRecurrenceInput } from "@/modules/recurrences/application/create-recurrence";
+import type {
+  ListRecurrencesInput,
+  RecurrenceListItem,
+} from "@/modules/recurrences/application/list-recurrences";
 import type {
   PersistRecurrenceOccurrenceInput,
   ProcessableRecurrence,
@@ -111,6 +118,63 @@ export function createRecurrenceRepository(authenticatedUserId: string) {
         .orderBy(asc(recurringTransactionTable.nextOccurrenceAt));
 
       return recurrences.map(toRecurringTransaction);
+    },
+
+    async listForUser(
+      input: ListRecurrencesInput,
+    ): Promise<RecurrenceListItem[]> {
+      assertUserScope(authenticatedUserId, input.userId);
+
+      const conditions = [
+        eq(recurringTransactionTable.userId, authenticatedUserId),
+      ];
+
+      if (input.isActive !== undefined) {
+        conditions.push(
+          eq(recurringTransactionTable.isActive, input.isActive),
+        );
+      }
+
+      const recurrences = await db
+        .select({
+          recurrence: recurringTransactionTable,
+          categoryName: categoryTable.name,
+          accountName: financialAccountTable.name,
+          creditCardName: creditCardTable.name,
+        })
+        .from(recurringTransactionTable)
+        .innerJoin(
+          categoryTable,
+          and(
+            eq(categoryTable.id, recurringTransactionTable.categoryId),
+            eq(categoryTable.userId, authenticatedUserId),
+          ),
+        )
+        .leftJoin(
+          financialAccountTable,
+          and(
+            eq(financialAccountTable.id, recurringTransactionTable.accountId),
+            eq(financialAccountTable.userId, authenticatedUserId),
+          ),
+        )
+        .leftJoin(
+          creditCardTable,
+          and(
+            eq(creditCardTable.id, recurringTransactionTable.creditCardId),
+            eq(creditCardTable.userId, authenticatedUserId),
+          ),
+        )
+        .where(and(...conditions))
+        .orderBy(asc(recurringTransactionTable.nextOccurrenceAt));
+
+      return recurrences.map(
+        ({ recurrence, categoryName, accountName, creditCardName }) => ({
+          ...toProcessableRecurrence(recurrence),
+          categoryName,
+          accountName: accountName ?? undefined,
+          creditCardName: creditCardName ?? undefined,
+        }),
+      );
     },
 
     async create(input: CreateRecurrenceInput): Promise<RecurringTransaction> {

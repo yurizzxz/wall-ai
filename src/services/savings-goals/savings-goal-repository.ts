@@ -8,7 +8,14 @@ import {
 } from "@/db/schema";
 import type { CreateSavingsGoalInput } from "@/modules/savings-goals/application/create-savings-goal";
 import type { RecordSavingsContributionInput } from "@/modules/savings-goals/application/contribute-to-savings-goal";
-import type { SavingsGoal } from "@/modules/savings-goals/domain/savings-goal";
+import type {
+  ListSavingsGoalsInput,
+  SavingsGoalListItem,
+} from "@/modules/savings-goals/application/list-savings-goals";
+import {
+  calculateSavingsProgress,
+  type SavingsGoal,
+} from "@/modules/savings-goals/domain/savings-goal";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
 
 function toSavingsGoal(row: typeof savingsGoalTable.$inferSelect): SavingsGoal {
@@ -65,6 +72,33 @@ export function createSavingsGoalRepository(authenticatedUserId: string) {
         .orderBy(asc(savingsGoalTable.name));
 
       return goals.map(toSavingsGoal);
+    },
+
+    async listForUser(
+      input: ListSavingsGoalsInput,
+    ): Promise<SavingsGoalListItem[]> {
+      assertUserScope(authenticatedUserId, input.userId);
+
+      const conditions = [eq(savingsGoalTable.userId, authenticatedUserId)];
+
+      if (input.status) {
+        conditions.push(eq(savingsGoalTable.status, input.status));
+      }
+
+      const goals = await db
+        .select()
+        .from(savingsGoalTable)
+        .where(and(...conditions))
+        .orderBy(asc(savingsGoalTable.name));
+
+      return goals.map((goal) => {
+        const savingsGoal = toSavingsGoal(goal);
+
+        return {
+          ...savingsGoal,
+          progressPercentage: calculateSavingsProgress(savingsGoal),
+        };
+      });
     },
 
     async create(input: CreateSavingsGoalInput): Promise<SavingsGoal> {
