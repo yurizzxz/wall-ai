@@ -3,6 +3,7 @@ import {
   assertPositiveAmountInCents,
   type AmountInCents,
 } from "../../shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CreditCard = {
   id: string;
@@ -21,7 +22,7 @@ type CreditCardDetails = Pick<
 
 export function validateCreditCard<T extends CreditCardDetails>(card: T): T {
   if (!card.name.trim()) {
-    throw new Error("O nome do cartão é obrigatório.");
+    throw new BusinessError("CARD_NAME_REQUIRED", "O nome do cartão é obrigatório.");
   }
 
   assertPositiveAmountInCents(card.limitInCents, "limite");
@@ -47,7 +48,10 @@ export function assertPurchaseFitsLimit(
   assertPositiveAmountInCents(purchaseInCents, "compra");
 
   if (purchaseInCents > availableInCents) {
-    throw new Error("A compra ultrapassa o limite disponível do cartão.");
+    throw new BusinessError(
+      "CARD_LIMIT_EXCEEDED",
+      "A compra ultrapassa o limite disponível do cartão.",
+    );
   }
 }
 
@@ -58,7 +62,10 @@ export function splitPurchaseIntoInstallments(
   assertPositiveAmountInCents(totalInCents, "compra");
 
   if (!Number.isInteger(installmentCount) || installmentCount < 1) {
-    throw new Error("A quantidade de parcelas deve ser um inteiro positivo.");
+    throw new BusinessError(
+      "INVALID_INSTALLMENT_COUNT",
+      "A quantidade de parcelas deve ser um inteiro positivo.",
+    );
   }
 
   const base = Math.floor(totalInCents / installmentCount);
@@ -72,6 +79,9 @@ export function splitPurchaseIntoInstallments(
 
 function assertBillingDay(day: number, fieldName: string): void {
   if (!Number.isInteger(day) || day < 1 || day > 28) {
-    throw new Error(`${fieldName} deve estar entre 1 e 28.`);
+    throw new BusinessError(
+      "INVALID_BILLING_DAY",
+      `${fieldName} deve estar entre 1 e 28.`,
+    );
   }
 }

@@ -3,6 +3,7 @@ import {
   type AmountInCents,
 } from "../../shared/domain/money";
 import type { Account, AccountType } from "../domain/account";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CreateAccountInput = {
   userId: string;
@@ -23,17 +24,17 @@ export async function createAccount(
   const name = input.name.trim();
 
   if (!input.userId) {
-    throw new Error("A conta precisa pertencer a um usuário.");
+    throw new BusinessError("ACCOUNT_USER_REQUIRED", "A conta precisa pertencer a um usuário.");
   }
 
   if (!name) {
-    throw new Error("O nome da conta é obrigatório.");
+    throw new BusinessError("ACCOUNT_NAME_REQUIRED", "O nome da conta é obrigatório.");
   }
 
   assertAmountInCents(input.initialBalanceInCents, "saldo inicial");
 
   if (await repository.findByName(input.userId, name)) {
-    throw new Error("Já existe uma conta com esse nome.");
+    throw new BusinessError("ACCOUNT_NAME_CONFLICT", "Já existe uma conta com esse nome.");
   }
 
   return repository.create({ ...input, name });

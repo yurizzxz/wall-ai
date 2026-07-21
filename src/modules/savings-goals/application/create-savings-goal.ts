@@ -3,6 +3,7 @@ import {
   type AmountInCents,
 } from "../../shared/domain/money";
 import type { SavingsGoal } from "../domain/savings-goal";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CreateSavingsGoalInput = {
   userId: string;
@@ -23,21 +24,21 @@ export async function createSavingsGoal(
   const name = input.name.trim();
 
   if (!input.userId) {
-    throw new Error("O cofrinho precisa pertencer a um usuário.");
+    throw new BusinessError("SAVINGS_GOAL_USER_REQUIRED", "O cofrinho precisa pertencer a um usuário.");
   }
 
   if (!name) {
-    throw new Error("O nome do cofrinho é obrigatório.");
+    throw new BusinessError("SAVINGS_GOAL_NAME_REQUIRED", "O nome do cofrinho é obrigatório.");
   }
 
   assertPositiveAmountInCents(input.targetInCents, "meta");
 
   if (input.deadline && Number.isNaN(input.deadline.getTime())) {
-    throw new Error("O prazo do cofrinho é inválido.");
+    throw new BusinessError("INVALID_SAVINGS_GOAL_DEADLINE", "O prazo do cofrinho é inválido.");
   }
 
   if (await repository.findByName(name)) {
-    throw new Error("Já existe um cofrinho com esse nome.");
+    throw new BusinessError("SAVINGS_GOAL_NAME_CONFLICT", "Já existe um cofrinho com esse nome.");
   }
 
   return repository.create({ ...input, name });

@@ -2,6 +2,7 @@ import type {
   Category,
   CategoryKind,
 } from "../domain/category";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CreateCategoryInput = {
   userId: string;
@@ -27,15 +28,15 @@ export async function createCategory(
   const name = input.name.trim();
 
   if (!input.userId) {
-    throw new Error("A categoria precisa pertencer a um usuário.");
+    throw new BusinessError("CATEGORY_USER_REQUIRED", "A categoria precisa pertencer a um usuário.");
   }
 
   if (!name) {
-    throw new Error("O nome da categoria é obrigatório.");
+    throw new BusinessError("CATEGORY_NAME_REQUIRED", "O nome da categoria é obrigatório.");
   }
 
   if (await repository.findByNameAndKind(input.userId, name, input.kind)) {
-    throw new Error("Já existe uma categoria com esse nome e tipo.");
+    throw new BusinessError("CATEGORY_NAME_CONFLICT", "Já existe uma categoria com esse nome e tipo.");
   }
 
   return repository.create({

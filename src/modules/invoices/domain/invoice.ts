@@ -3,6 +3,7 @@ import {
   assertPositiveAmountInCents,
   type AmountInCents,
 } from "../../shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type InvoiceStatus = "OPEN" | "CLOSED" | "OVERDUE" | "PAID";
 
@@ -32,15 +33,21 @@ export function assertInvoiceCanBePaid(
   assertPositiveAmountInCents(paymentInCents, "pagamento");
 
   if (invoice.status === "OPEN") {
-    throw new Error("A fatura precisa estar fechada antes do pagamento.");
+    throw new BusinessError(
+      "INVOICE_NOT_CLOSED",
+      "A fatura precisa estar fechada antes do pagamento.",
+    );
   }
 
   if (invoice.status === "PAID") {
-    throw new Error("A fatura já está paga.");
+    throw new BusinessError("INVOICE_ALREADY_PAID", "A fatura já está paga.");
   }
 
   if (paymentInCents > calculateInvoiceOutstanding(invoice)) {
-    throw new Error("O pagamento não pode ultrapassar o saldo da fatura.");
+    throw new BusinessError(
+      "INVOICE_PAYMENT_EXCEEDS_OUTSTANDING",
+      "O pagamento não pode ultrapassar o saldo da fatura.",
+    );
   }
 }
 

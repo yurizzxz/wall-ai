@@ -6,6 +6,7 @@ import type {
   PaymentMethod,
   TransactionKind,
 } from "../../transactions/domain/transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type RecurrenceFrequency = "WEEKLY" | "MONTHLY" | "YEARLY";
 
@@ -34,17 +35,26 @@ export function validateRecurrence<T extends RecurrenceDetails>(
   recurrence: T,
 ): T {
   if (!recurrence.description.trim()) {
-    throw new Error("A descrição da recorrência é obrigatória.");
+    throw new BusinessError(
+      "RECURRENCE_DESCRIPTION_REQUIRED",
+      "A descrição da recorrência é obrigatória.",
+    );
   }
 
   assertPositiveAmountInCents(recurrence.amountInCents);
 
   if (Number.isNaN(recurrence.nextOccurrenceAt.getTime())) {
-    throw new Error("A próxima ocorrência é inválida.");
+    throw new BusinessError(
+      "INVALID_NEXT_OCCURRENCE",
+      "A próxima ocorrência é inválida.",
+    );
   }
 
   if (recurrence.endsAt && recurrence.endsAt < recurrence.nextOccurrenceAt) {
-    throw new Error("O término não pode vir antes da próxima ocorrência.");
+    throw new BusinessError(
+      "INVALID_RECURRENCE_END",
+      "O término não pode vir antes da próxima ocorrência.",
+    );
   }
 
   return {
@@ -91,3 +101,4 @@ export function calculateNextOccurrence(
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
+

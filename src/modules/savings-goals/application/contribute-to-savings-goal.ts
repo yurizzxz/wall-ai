@@ -13,6 +13,7 @@ import {
   type SavingsGoal,
   type SavingsGoalStatus,
 } from "../domain/savings-goal";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type ContributeToSavingsGoalInput = {
   userId: string;
@@ -64,15 +65,24 @@ export async function contributeToSavingsGoal(
   ]);
 
   if (!goal) {
-    throw new Error("Cofrinho não encontrado para esse usuário.");
+    throw new BusinessError(
+      "SAVINGS_GOAL_NOT_FOUND",
+      "Cofrinho não encontrado para esse usuário.",
+    );
   }
 
   if (!account) {
-    throw new Error("Conta não encontrada para esse usuário.");
+    throw new BusinessError(
+      "ACCOUNT_NOT_FOUND",
+      "Conta não encontrada para esse usuário.",
+    );
   }
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertAccountCanReceiveMovements(account);

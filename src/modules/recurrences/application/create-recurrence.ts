@@ -21,6 +21,7 @@ import type {
   PaymentMethod,
   TransactionKind,
 } from "../../transactions/domain/transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CreateRecurrenceInput = {
   userId: string;
@@ -65,14 +66,17 @@ export async function createRecurrence(
   );
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertCategoryAcceptsTransaction(category, input.kind);
 
   if (input.paymentMethod === "CREDIT_CARD") {
     if (input.kind !== "EXPENSE" || !input.creditCardId || input.accountId) {
-      throw new Error("Recorrência no crédito precisa usar somente um cartão.");
+      throw new BusinessError("INVALID_CREDIT_RECURRENCE_SOURCE", "Recorrência no crédito precisa usar somente um cartão.");
     }
 
     const result = await dependencies.creditCards.findById(
@@ -81,7 +85,7 @@ export async function createRecurrence(
     );
 
     if (!result?.card.isActive) {
-      throw new Error("Cartão não encontrado ou inativo.");
+      throw new BusinessError("CARD_NOT_FOUND_OR_INACTIVE", "Cartão não encontrado ou inativo.");
     }
 
     assertPurchaseFitsLimit(
@@ -90,7 +94,7 @@ export async function createRecurrence(
     );
   } else {
     if (!input.accountId || input.creditCardId) {
-      throw new Error("Recorrência fora do crédito precisa usar somente uma conta.");
+      throw new BusinessError("INVALID_ACCOUNT_RECURRENCE_SOURCE", "Recorrência fora do crédito precisa usar somente uma conta.");
     }
 
     const account = await dependencies.accounts.findById(
@@ -99,7 +103,10 @@ export async function createRecurrence(
     );
 
     if (!account) {
-      throw new Error("Conta não encontrada para esse usuário.");
+      throw new BusinessError(
+        "ACCOUNT_NOT_FOUND",
+        "Conta não encontrada para esse usuário.",
+      );
     }
 
     assertAccountCanReceiveMovements(account);

@@ -1,4 +1,5 @@
 import type { TransactionRecord } from "./create-transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CancelTransactionInput = {
   userId: string;
@@ -22,11 +23,14 @@ export async function cancelTransaction(
   );
 
   if (!transaction) {
-    throw new Error("Lançamento não encontrado para esse usuário.");
+    throw new BusinessError(
+      "TRANSACTION_NOT_FOUND",
+      "Lançamento não encontrado para esse usuário.",
+    );
   }
 
   if (transaction.status === "CANCELLED") {
-    throw new Error("O lançamento já está cancelado.");
+    throw new BusinessError("TRANSACTION_ALREADY_CANCELLED", "O lançamento já está cancelado.");
   }
 
   return dependencies.transactions.cancel(input);

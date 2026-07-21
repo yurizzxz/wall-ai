@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createDebtSchema } from "@/actions/debts/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { createDebt } from "@/modules/debts/application/create-debt";
 import { createRepositories } from "@/services/repositories";
 
@@ -20,12 +21,11 @@ export const createDebtAction = authenticatedAction
 
       revalidatePath("/dashboard/debts");
 
-      return { ok: true, id: debt.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível criar a dívida.",
-      };
+      return actionSuccess(debt.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao criar dívida",
+        fallbackMessage: "Não foi possível criar a dívida.",
+      });
     }
   });

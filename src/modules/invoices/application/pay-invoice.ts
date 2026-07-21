@@ -14,6 +14,7 @@ import {
   type Invoice,
   type InvoiceStatus,
 } from "../domain/invoice";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type PayInvoiceInput = {
   userId: string;
@@ -57,15 +58,24 @@ export async function payInvoice(
   ]);
 
   if (!invoice) {
-    throw new Error("Fatura não encontrada para esse usuário.");
+    throw new BusinessError(
+      "INVOICE_NOT_FOUND",
+      "Fatura não encontrada para esse usuário.",
+    );
   }
 
   if (!account) {
-    throw new Error("Conta não encontrada para esse usuário.");
+    throw new BusinessError(
+      "ACCOUNT_NOT_FOUND",
+      "Conta não encontrada para esse usuário.",
+    );
   }
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertAccountCanReceiveMovements(account);

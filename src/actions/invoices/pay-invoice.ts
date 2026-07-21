@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { payInvoiceSchema } from "@/actions/invoices/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { payInvoice } from "@/modules/invoices/application/pay-invoice";
 import { createRepositories } from "@/services/repositories";
 
@@ -22,12 +23,11 @@ export const payInvoiceAction = authenticatedAction
       revalidatePath("/dashboard/invoices");
       revalidatePath("/dashboard/transactions");
 
-      return { ok: true, id: invoice.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível pagar a fatura.",
-      };
+      return actionSuccess(invoice.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao pagar fatura",
+        fallbackMessage: "Não foi possível pagar a fatura.",
+      });
     }
   });

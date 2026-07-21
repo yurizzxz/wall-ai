@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createCategorySchema } from "@/actions/categories/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { createCategory } from "@/modules/categories/application/create-category";
 import { createRepositories } from "@/services/repositories";
 
@@ -20,12 +21,11 @@ export const createCategoryAction = authenticatedAction
 
       revalidatePath("/dashboard/categories");
 
-      return { ok: true, id: category.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível criar a categoria.",
-      };
+      return actionSuccess(category.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao criar categoria",
+        fallbackMessage: "Não foi possível criar a categoria.",
+      });
     }
   });

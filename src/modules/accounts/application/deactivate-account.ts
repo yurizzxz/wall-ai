@@ -1,4 +1,5 @@
-import type { AmountInCents } from "@/modules/shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
+import type { AmountInCents } from "../../shared/domain/money";
 import type { Account } from "../domain/account";
 
 export type DeactivateAccountInput = {
@@ -10,19 +11,6 @@ export type AccountWithBalance = {
   account: Account;
   balanceInCents: AmountInCents;
 };
-
-export type DeactivateAccountErrorCode =
-  | "ACCOUNT_NOT_FOUND"
-  | "ACCOUNT_ALREADY_INACTIVE"
-  | "ACCOUNT_HAS_BALANCE"
-  | "ACCOUNT_HAS_PENDING_TRANSACTIONS";
-
-export class DeactivateAccountError extends Error {
-  constructor(public readonly code: DeactivateAccountErrorCode) {
-    super(code);
-    this.name = "DeactivateAccountError";
-  }
-}
 
 export type DeactivateAccountDependencies = {
   accounts: {
@@ -49,15 +37,18 @@ export async function deactivateAccount(
   );
 
   if (!result) {
-    throw new DeactivateAccountError("ACCOUNT_NOT_FOUND");
+    throw new BusinessError("ACCOUNT_NOT_FOUND", "Conta não encontrada.");
   }
 
   if (!result.account.isActive) {
-    throw new DeactivateAccountError("ACCOUNT_ALREADY_INACTIVE");
+    throw new BusinessError("ACCOUNT_ALREADY_INACTIVE", "Esta conta já está inativa.");
   }
 
   if (result.balanceInCents !== 0) {
-    throw new DeactivateAccountError("ACCOUNT_HAS_BALANCE");
+    throw new BusinessError(
+      "ACCOUNT_HAS_BALANCE",
+      "Transfira ou zere o saldo antes de desativar a conta.",
+    );
   }
 
   if (
@@ -66,7 +57,10 @@ export async function deactivateAccount(
       input.accountId,
     )
   ) {
-    throw new DeactivateAccountError("ACCOUNT_HAS_PENDING_TRANSACTIONS");
+    throw new BusinessError(
+      "ACCOUNT_HAS_PENDING_TRANSACTIONS",
+      "Resolva os lançamentos pendentes antes de desativar a conta.",
+    );
   }
 
   return dependencies.accounts.setActive(input.userId, input.accountId, false);

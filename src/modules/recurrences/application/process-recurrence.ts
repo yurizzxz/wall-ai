@@ -14,6 +14,7 @@ import {
 import type { AmountInCents } from "../../shared/domain/money";
 import type { TransactionRecord } from "../../transactions/application/create-transaction";
 import type { CreateTransactionInput } from "../../transactions/domain/transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type ProcessableRecurrence = RecurringTransaction & {
   accountId?: string;
@@ -70,17 +71,17 @@ export async function processRecurrence(
   );
 
   if (!recurrence?.isActive) {
-    throw new Error("Recorrência não encontrada ou inativa.");
+    throw new BusinessError("RECURRENCE_NOT_FOUND_OR_INACTIVE", "Recorrência não encontrada ou inativa.");
   }
 
   const now = dependencies.now();
 
   if (recurrence.nextOccurrenceAt > now) {
-    throw new Error("A recorrência ainda não está vencida.");
+    throw new BusinessError("RECURRENCE_NOT_DUE", "A recorrência ainda não está vencida.");
   }
 
   if (recurrence.endsAt && recurrence.nextOccurrenceAt > recurrence.endsAt) {
-    throw new Error("A recorrência já terminou.");
+    throw new BusinessError("RECURRENCE_ENDED", "A recorrência já terminou.");
   }
 
   const category = await dependencies.categories.findById(
@@ -89,7 +90,10 @@ export async function processRecurrence(
   );
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertCategoryAcceptsTransaction(category, recurrence.kind);
@@ -100,7 +104,7 @@ export async function processRecurrence(
       : null;
 
     if (!result?.card.isActive) {
-      throw new Error("Cartão não encontrado ou inativo.");
+      throw new BusinessError("CARD_NOT_FOUND_OR_INACTIVE", "Cartão não encontrado ou inativo.");
     }
 
     assertPurchaseFitsLimit(
@@ -113,7 +117,10 @@ export async function processRecurrence(
       : null;
 
     if (!account) {
-      throw new Error("Conta não encontrada para esse usuário.");
+      throw new BusinessError(
+        "ACCOUNT_NOT_FOUND",
+        "Conta não encontrada para esse usuário.",
+      );
     }
 
     assertAccountCanReceiveMovements(account);

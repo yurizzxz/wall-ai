@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createCreditCardSchema } from "@/actions/credit-cards/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { createCreditCard } from "@/modules/credit-cards/application/create-credit-card";
 import { createRepositories } from "@/services/repositories";
 
@@ -20,12 +21,11 @@ export const createCreditCardAction = authenticatedAction
 
       revalidatePath("/dashboard/credit-cards");
 
-      return { ok: true, id: card.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível criar o cartão.",
-      };
+      return actionSuccess(card.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao criar cartão",
+        fallbackMessage: "Não foi possível criar o cartão.",
+      });
     }
   });

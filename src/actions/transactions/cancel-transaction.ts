@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { cancelTransactionSchema } from "@/actions/transactions/schema";
 import { cancelTransaction } from "@/modules/transactions/application/cancel-transaction";
 import { createRepositories } from "@/services/repositories";
@@ -21,12 +22,11 @@ export const cancelTransactionAction = authenticatedAction
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/transactions");
 
-      return { ok: true, id: transaction.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível cancelar o lançamento.",
-      };
+      return actionSuccess(transaction.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao cancelar lançamento",
+        fallbackMessage: "Não foi possível cancelar o lançamento.",
+      });
     }
   });

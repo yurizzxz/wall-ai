@@ -14,6 +14,7 @@ import {
   validateTransaction,
   type CreateTransactionInput,
 } from "../domain/transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type TransactionRecord = CreateTransactionInput & {
   id: string;
@@ -32,10 +33,7 @@ export type CreateTransactionDependencies = {
     findById(
       userId: string,
       creditCardId: string,
-    ): Promise<
-      | { card: CreditCard; committedInCents: AmountInCents }
-      | null
-    >;
+    ): Promise<{ card: CreditCard; committedInCents: AmountInCents } | null>;
   };
   transactions: {
     create(input: CreateTransactionInput): Promise<TransactionRecord>;
@@ -53,7 +51,10 @@ export async function createTransaction(
   );
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertCategoryAcceptsTransaction(category, input.kind);
@@ -65,7 +66,10 @@ export async function createTransaction(
     );
 
     if (!creditCard || !creditCard.card.isActive) {
-      throw new Error("Cartão não encontrado ou inativo.");
+      throw new BusinessError(
+        "CARD_NOT_FOUND_OR_INACTIVE",
+        "Cartão não encontrado ou inativo.",
+      );
     }
 
     const availableInCents = calculateAvailableLimit(
@@ -81,7 +85,10 @@ export async function createTransaction(
     );
 
     if (!account) {
-      throw new Error("Conta não encontrada para esse usuário.");
+      throw new BusinessError(
+        "ACCOUNT_NOT_FOUND",
+        "Conta não encontrada para esse usuário.",
+      );
     }
 
     assertAccountCanReceiveMovements(account);

@@ -2,6 +2,7 @@ import {
   assertAmountInCents,
   type AmountInCents,
 } from "../../shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type AccountType = "CHECKING" | "SAVINGS" | "CASH" | "INVESTMENT";
 
@@ -41,6 +42,9 @@ export function calculateAccountBalance(
 
 export function assertAccountCanReceiveMovements(account: Account): void {
   if (!account.isActive) {
-    throw new Error("Uma conta inativa não pode receber movimentações.");
+    throw new BusinessError(
+      "ACCOUNT_INACTIVE",
+      "Uma conta inativa não pode receber movimentações.",
+    );
   }
 }

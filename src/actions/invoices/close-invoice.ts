@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { closeInvoiceSchema } from "@/actions/invoices/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { closeInvoice } from "@/modules/invoices/application/close-invoice";
 import { createRepositories } from "@/services/repositories";
 
@@ -21,12 +22,11 @@ export const closeInvoiceAction = authenticatedAction
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/invoices");
 
-      return { ok: true, id: invoice.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível fechar a fatura.",
-      };
+      return actionSuccess(invoice.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao fechar fatura",
+        fallbackMessage: "Não foi possível fechar a fatura.",
+      });
     }
   });

@@ -3,6 +3,7 @@ import {
   assertPositiveAmountInCents,
   type AmountInCents,
 } from "../../shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type DebtStatus = "OPEN" | "OVERDUE" | "PAID" | "CANCELLED";
 
@@ -32,11 +33,17 @@ export function assertDebtPayment(
   assertPositiveAmountInCents(paymentInCents, "pagamento");
 
   if (debt.status === "PAID" || debt.status === "CANCELLED") {
-    throw new Error("Essa dívida não aceita novos pagamentos.");
+    throw new BusinessError(
+      "DEBT_NOT_PAYABLE",
+      "Essa dívida não aceita novos pagamentos.",
+    );
   }
 
   if (paymentInCents > calculateDebtOutstanding(debt)) {
-    throw new Error("O pagamento ultrapassa o saldo devedor.");
+    throw new BusinessError(
+      "DEBT_PAYMENT_EXCEEDS_OUTSTANDING",
+      "O pagamento ultrapassa o saldo devedor.",
+    );
   }
 }
 
@@ -54,3 +61,4 @@ export function deriveDebtStatus(
 
   return debt.dueAt && now > debt.dueAt ? "OVERDUE" : "OPEN";
 }
+

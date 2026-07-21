@@ -2,6 +2,7 @@ import {
   assertPositiveAmountInCents,
   type AmountInCents,
 } from "../../shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type TransactionKind = "INCOME" | "EXPENSE";
 export type TransactionStatus = "PENDING" | "SETTLED" | "CANCELLED";
@@ -32,43 +33,73 @@ export function validateTransaction(
   input: CreateTransactionInput,
 ): CreateTransactionInput {
   if (!input.userId) {
-    throw new Error("O lançamento precisa pertencer a um usuário.");
+    throw new BusinessError(
+      "TRANSACTION_USER_REQUIRED",
+      "O lançamento precisa pertencer a um usuário.",
+    );
   }
 
   if (!input.description.trim()) {
-    throw new Error("A descrição do lançamento é obrigatória.");
+    throw new BusinessError(
+      "TRANSACTION_DESCRIPTION_REQUIRED",
+      "A descrição do lançamento é obrigatória.",
+    );
   }
 
   if (!input.categoryId) {
-    throw new Error("A categoria do lançamento é obrigatória.");
+    throw new BusinessError(
+      "TRANSACTION_CATEGORY_REQUIRED",
+      "A categoria do lançamento é obrigatória.",
+    );
   }
 
   assertPositiveAmountInCents(input.amountInCents);
 
   if (Number.isNaN(input.occurredAt.getTime())) {
-    throw new Error("A data do lançamento é inválida.");
+    throw new BusinessError(
+      "INVALID_TRANSACTION_DATE",
+      "A data do lançamento é inválida.",
+    );
   }
 
   if (input.dueAt && Number.isNaN(input.dueAt.getTime())) {
-    throw new Error("A data de vencimento é inválida.");
+    throw new BusinessError(
+      "INVALID_DUE_DATE",
+      "A data de vencimento é inválida.",
+    );
   }
 
   if (input.paymentMethod === "CREDIT_CARD") {
     if (input.kind !== "EXPENSE") {
-      throw new Error("Recebimentos não podem usar cartão de crédito.");
+      throw new BusinessError(
+        "CREDIT_CARD_INCOME_NOT_ALLOWED",
+        "Recebimentos não podem usar cartão de crédito.",
+      );
     }
 
     if (!input.creditCardId) {
-      throw new Error("Uma compra no crédito precisa indicar o cartão.");
+      throw new BusinessError(
+        "CREDIT_CARD_REQUIRED",
+        "Uma compra no crédito precisa indicar o cartão.",
+      );
     }
 
     if (input.accountId) {
-      throw new Error("Uma compra no crédito não movimenta uma conta diretamente.");
+      throw new BusinessError(
+        "CREDIT_CARD_ACCOUNT_NOT_ALLOWED",
+        "Uma compra no crédito não movimenta uma conta diretamente.",
+      );
     }
   } else if (!input.accountId) {
-    throw new Error("O lançamento precisa indicar a conta movimentada.");
+    throw new BusinessError(
+      "TRANSACTION_ACCOUNT_REQUIRED",
+      "O lançamento precisa indicar a conta movimentada.",
+    );
   } else if (input.creditCardId) {
-    throw new Error("Somente compras no crédito podem indicar um cartão.");
+    throw new BusinessError(
+      "CREDIT_CARD_NOT_ALLOWED",
+      "Somente compras no crédito podem indicar um cartão.",
+    );
   }
 
   return {

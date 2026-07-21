@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { processRecurrenceSchema } from "@/actions/recurrences/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { processRecurrence } from "@/modules/recurrences/application/process-recurrence";
 import { createRepositories } from "@/services/repositories";
 
@@ -29,12 +30,11 @@ export const processRecurrenceAction = authenticatedAction
       revalidatePath("/dashboard/recurrences");
       revalidatePath("/dashboard/transactions");
 
-      return { ok: true, id: transaction.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível processar a recorrência.",
-      };
+      return actionSuccess(transaction.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao processar recorrência",
+        fallbackMessage: "Não foi possível processar a recorrência.",
+      });
     }
   });

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createSavingsGoalSchema } from "@/actions/savings-goals/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { createSavingsGoal } from "@/modules/savings-goals/application/create-savings-goal";
 import { createRepositories } from "@/services/repositories";
 
@@ -20,12 +21,11 @@ export const createSavingsGoalAction = authenticatedAction
 
       revalidatePath("/dashboard/savings-goals");
 
-      return { ok: true, id: goal.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível criar o cofrinho.",
-      };
+      return actionSuccess(goal.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao criar cofrinho",
+        fallbackMessage: "Não foi possível criar o cofrinho.",
+      });
     }
   });

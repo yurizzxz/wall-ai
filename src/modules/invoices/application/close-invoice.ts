@@ -1,4 +1,5 @@
 import type { Invoice } from "../domain/invoice";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type CloseInvoiceInput = {
   userId: string;
@@ -23,15 +24,18 @@ export async function closeInvoice(
   );
 
   if (!invoice) {
-    throw new Error("Fatura não encontrada para esse usuário.");
+    throw new BusinessError(
+      "INVOICE_NOT_FOUND",
+      "Fatura não encontrada para esse usuário.",
+    );
   }
 
   if (invoice.status !== "OPEN") {
-    throw new Error("Somente uma fatura aberta pode ser fechada.");
+    throw new BusinessError("INVOICE_NOT_OPEN", "Somente uma fatura aberta pode ser fechada.");
   }
 
   if (dependencies.now() < invoice.closingAt) {
-    throw new Error("A data de fechamento da fatura ainda não chegou.");
+    throw new BusinessError("INVOICE_CLOSING_DATE_NOT_REACHED", "A data de fechamento da fatura ainda não chegou.");
   }
 
   return dependencies.invoices.close(input.userId, input.invoiceId);

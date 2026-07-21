@@ -1,3 +1,5 @@
+import { BusinessError } from "../../shared/application/business-error";
+
 export type CategoryKind = "INCOME" | "EXPENSE" | "BOTH";
 
 export type Category = {
@@ -34,10 +36,16 @@ export function assertCategoryAcceptsTransaction(
   transactionKind: "INCOME" | "EXPENSE",
 ): void {
   if (!category.isActive) {
-    throw new Error("A categoria selecionada está inativa.");
+    throw new BusinessError(
+      "CATEGORY_INACTIVE",
+      "A categoria selecionada está inativa.",
+    );
   }
 
   if (category.kind !== "BOTH" && category.kind !== transactionKind) {
-    throw new Error("A categoria não aceita esse tipo de lançamento.");
+    throw new BusinessError(
+      "CATEGORY_KIND_MISMATCH",
+      "A categoria não aceita esse tipo de lançamento.",
+    );
   }
 }

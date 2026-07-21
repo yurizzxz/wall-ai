@@ -3,6 +3,7 @@ import {
   type Category,
 } from "../../categories/domain/category";
 import type { TransactionRecord } from "./create-transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type UpdateTransactionInput = {
   userId: string;
@@ -28,7 +29,7 @@ export async function updateTransaction(
   const input = { ...rawInput, description: rawInput.description.trim() };
 
   if (!input.description) {
-    throw new Error("A descrição do lançamento é obrigatória.");
+    throw new BusinessError("TRANSACTION_DESCRIPTION_REQUIRED", "A descrição do lançamento é obrigatória.");
   }
 
   const [transaction, category] = await Promise.all([
@@ -37,15 +38,21 @@ export async function updateTransaction(
   ]);
 
   if (!transaction) {
-    throw new Error("Lançamento não encontrado para esse usuário.");
+    throw new BusinessError(
+      "TRANSACTION_NOT_FOUND",
+      "Lançamento não encontrado para esse usuário.",
+    );
   }
 
   if (transaction.status === "CANCELLED") {
-    throw new Error("Um lançamento cancelado não pode ser editado.");
+    throw new BusinessError("TRANSACTION_CANCELLED", "Um lançamento cancelado não pode ser editado.");
   }
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertCategoryAcceptsTransaction(category, transaction.kind);

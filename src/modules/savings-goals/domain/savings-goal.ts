@@ -3,6 +3,7 @@ import {
   assertPositiveAmountInCents,
   type AmountInCents,
 } from "../../shared/domain/money";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type SavingsGoalStatus = "ACTIVE" | "COMPLETED" | "CANCELLED";
 
@@ -23,7 +24,10 @@ export function assertSavingsContribution(
   assertPositiveAmountInCents(contributionInCents, "aporte");
 
   if (goal.status !== "ACTIVE") {
-    throw new Error("Somente cofrinhos ativos podem receber aportes.");
+    throw new BusinessError(
+      "SAVINGS_GOAL_NOT_ACTIVE",
+      "Somente cofrinhos ativos podem receber aportes.",
+    );
   }
 }
 
@@ -34,9 +38,7 @@ export function calculateSavingsProgress(goal: SavingsGoal): number {
   return Math.min(100, (goal.savedInCents / goal.targetInCents) * 100);
 }
 
-export function deriveSavingsGoalStatus(
-  goal: SavingsGoal,
-): SavingsGoalStatus {
+export function deriveSavingsGoalStatus(goal: SavingsGoal): SavingsGoalStatus {
   if (goal.status === "CANCELLED") {
     return "CANCELLED";
   }

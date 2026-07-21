@@ -14,6 +14,7 @@ import {
 } from "../domain/debt";
 import type { AmountInCents } from "../../shared/domain/money";
 import type { AccountPaymentMethod } from "../../transactions/domain/transaction";
+import { BusinessError } from "../../shared/application/business-error";
 
 export type PayDebtInput = {
   userId: string;
@@ -57,15 +58,24 @@ export async function payDebt(
   ]);
 
   if (!debt) {
-    throw new Error("Dívida não encontrada para esse usuário.");
+    throw new BusinessError(
+      "DEBT_NOT_FOUND",
+      "Dívida não encontrada para esse usuário.",
+    );
   }
 
   if (!account) {
-    throw new Error("Conta não encontrada para esse usuário.");
+    throw new BusinessError(
+      "ACCOUNT_NOT_FOUND",
+      "Conta não encontrada para esse usuário.",
+    );
   }
 
   if (!category) {
-    throw new Error("Categoria não encontrada para esse usuário.");
+    throw new BusinessError(
+      "CATEGORY_NOT_FOUND",
+      "Categoria não encontrada para esse usuário.",
+    );
   }
 
   assertAccountCanReceiveMovements(account);

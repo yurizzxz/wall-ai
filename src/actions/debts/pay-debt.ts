@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { payDebtSchema } from "@/actions/debts/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { payDebt } from "@/modules/debts/application/pay-debt";
 import { createRepositories } from "@/services/repositories";
 
@@ -22,12 +23,11 @@ export const payDebtAction = authenticatedAction
       revalidatePath("/dashboard/debts");
       revalidatePath("/dashboard/transactions");
 
-      return { ok: true, id: debt.id };
-    } catch {
-      return {
-        ok: false,
-        error: "OPERATION_FAILED" as const,
-        message: "Não foi possível pagar a dívida.",
-      };
+      return actionSuccess(debt.id);
+    } catch (error) {
+      return handleActionError(error, {
+        context: "Erro ao pagar dívida",
+        fallbackMessage: "Não foi possível pagar a dívida.",
+      });
     }
   });
