@@ -21,6 +21,11 @@ export function formatCompactCurrency(cents: number) {
   return compactCurrencyFormatter.format(cents / 100);
 }
 
+export const KIND_LABELS = {
+  INCOME: "Receita",
+  EXPENSE: "Despesa",
+} satisfies Record<"INCOME" | "EXPENSE", string>;
+
 export const ACCOUNT_TYPE_LABELS = {
   CHECKING: "Conta corrente",
   SAVINGS: "Poupança",
@@ -28,3 +33,17 @@ export const ACCOUNT_TYPE_LABELS = {
   INVESTMENT: "Investimentos",
 
 } satisfies Record<AccountType, string>;
+
+export const PAYMENT_METHODS = [
+  ["PIX", "Pix"],
+  ["CASH", "Dinheiro"],
+  ["DEBIT_CARD", "Cartão de débito"],
+  ["BANK_TRANSFER", "Transferência bancária"],
+  ["CREDIT_CARD", "Cartão de crédito"],
+] as const;
+
+export const FREQUENCY_LABELS = {
+  WEEKLY: "Semanal",
+  MONTHLY: "Mensal",
+  YEARLY: "Anual",
+} satisfies Record<"WEEKLY" | "MONTHLY" | "YEARLY", string>;
