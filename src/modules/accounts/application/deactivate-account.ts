@@ -1,3 +1,4 @@
+import type { AmountInCents } from "@/modules/shared/domain/money";
 import type { Account } from "../domain/account";
 
 export type DeactivateAccountInput = {
@@ -5,11 +6,36 @@ export type DeactivateAccountInput = {
   accountId: string;
 };
 
+export type AccountWithBalance = {
+  account: Account;
+  balanceInCents: AmountInCents;
+};
+
+export type DeactivateAccountErrorCode =
+  | "ACCOUNT_NOT_FOUND"
+  | "ACCOUNT_ALREADY_INACTIVE"
+  | "ACCOUNT_HAS_BALANCE"
+  | "ACCOUNT_HAS_PENDING_TRANSACTIONS";
+
+export class DeactivateAccountError extends Error {
+  constructor(public readonly code: DeactivateAccountErrorCode) {
+    super(code);
+    this.name = "DeactivateAccountError";
+  }
+}
+
 export type DeactivateAccountDependencies = {
   accounts: {
-    findById(userId: string, accountId: string): Promise<Account | null>;
+    findByIdWithBalance(
+      userId: string,
+      accountId: string,
+    ): Promise<AccountWithBalance | null>;
     hasPendingTransactions(userId: string, accountId: string): Promise<boolean>;
-    setActive(userId: string, accountId: string, isActive: boolean): Promise<Account>;
+    setActive(
+      userId: string,
+      accountId: string,
+      isActive: boolean,
+    ): Promise<Account>;
   };
 };
 
@@ -17,17 +43,21 @@ export async function deactivateAccount(
   input: DeactivateAccountInput,
   dependencies: DeactivateAccountDependencies,
 ): Promise<Account> {
-  const account = await dependencies.accounts.findById(
+  const result = await dependencies.accounts.findByIdWithBalance(
     input.userId,
     input.accountId,
   );
 
-  if (!account) {
-    throw new Error("Conta não encontrada para esse usuário.");
+  if (!result) {
+    throw new DeactivateAccountError("ACCOUNT_NOT_FOUND");
   }
 
-  if (!account.isActive) {
-    throw new Error("A conta já está inativa.");
+  if (!result.account.isActive) {
+    throw new DeactivateAccountError("ACCOUNT_ALREADY_INACTIVE");
+  }
+
+  if (result.balanceInCents !== 0) {
+    throw new DeactivateAccountError("ACCOUNT_HAS_BALANCE");
   }
 
   if (
@@ -36,7 +66,7 @@ export async function deactivateAccount(
       input.accountId,
     )
   ) {
-    throw new Error("A conta possui lançamentos pendentes.");
+    throw new DeactivateAccountError("ACCOUNT_HAS_PENDING_TRANSACTIONS");
   }
 
   return dependencies.accounts.setActive(input.userId, input.accountId, false);

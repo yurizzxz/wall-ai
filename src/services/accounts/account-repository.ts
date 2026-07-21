@@ -12,18 +12,72 @@ import type {
 } from "@/modules/accounts/application/list-accounts";
 import type { Account } from "@/modules/accounts/domain/account";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
+import { AccountWithBalance } from "@/modules/accounts/application/deactivate-account";
 
 export type DrizzleAccountRepository = AccountRepository & {
+  findByIdWithBalance(
+    userId: string,
+    accountId: string,
+  ): Promise<AccountWithBalance | null>;
   findById(userId: string, accountId: string): Promise<Account | null>;
   list(): Promise<Account[]>;
   hasPendingTransactions(userId: string, accountId: string): Promise<boolean>;
-  setActive(userId: string, accountId: string, isActive: boolean): Promise<Account>;
+  setActive(
+    userId: string,
+    accountId: string,
+    isActive: boolean,
+  ): Promise<Account>;
 } & ListAccountsRepository;
 
 export function createAccountRepository(
   authenticatedUserId: string,
 ): DrizzleAccountRepository {
   return {
+    async findByIdWithBalance(userId, accountId) {
+      assertUserScope(authenticatedUserId, userId);
+
+      const [result] = await db
+        .select({
+          account: financialAccountTable,
+          balanceInCents: sql<number>`
+        ${financialAccountTable.initialBalanceInCents}
+        + coalesce(sum(
+          case
+            when ${transactionTable.status} = 'SETTLED'
+              and ${transactionTable.paymentMethod} <> 'CREDIT_CARD'
+            then case
+              when ${transactionTable.kind} = 'INCOME'
+                then ${transactionTable.amountInCents}
+              else -${transactionTable.amountInCents}
+            end
+            else 0
+          end
+        ), 0)
+      `,
+        })
+        .from(financialAccountTable)
+        .leftJoin(
+          transactionTable,
+          and(
+            eq(transactionTable.accountId, financialAccountTable.id),
+            eq(transactionTable.userId, authenticatedUserId),
+          ),
+        )
+        .where(
+          and(
+            eq(financialAccountTable.id, accountId),
+            eq(financialAccountTable.userId, authenticatedUserId),
+          ),
+        )
+        .groupBy(financialAccountTable.id);
+
+      if (!result) return null;
+
+      return {
+        account: result.account,
+        balanceInCents: Number(result.balanceInCents),
+      };
+    },
     async findById(userId, accountId) {
       assertUserScope(authenticatedUserId, userId);
 
