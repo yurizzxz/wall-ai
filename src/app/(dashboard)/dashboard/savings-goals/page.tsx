@@ -1,7 +1,7 @@
 import { PiggyBank, Target } from "lucide-react";
 
 import { CreateSavingsGoalDialog } from "@/app/(dashboard)/dashboard/savings-goals/_components/create-savings-goal-dialog";
-import { SavingsGoalRow } from "@/app/(dashboard)/dashboard/savings-goals/_components/savings-goal-row";
+import { SavingsGoalsTable } from "@/app/(dashboard)/dashboard/savings-goals/_components/savings-goals-table";
 import {
   Card,
   CardContent,
@@ -102,16 +102,11 @@ export default async function SavingsGoalsPage() {
         </CardHeader>
         <CardContent className="px-0">
           {goals.length > 0 ? (
-            <ul className="divide-y" aria-label="Metas cadastradas">
-              {goals.map((goal) => (
-                <SavingsGoalRow
-                  key={goal.id}
-                  goal={goal}
-                  accounts={activeAccounts}
-                  categories={expenseCategories}
-                />
-              ))}
-            </ul>
+            <SavingsGoalsTable
+              goals={goals}
+              accounts={activeAccounts}
+              categories={expenseCategories}
+            />
           ) : (
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <span className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">

@@ -1,7 +1,7 @@
 import { HandCoins } from "lucide-react";
 
 import { CreateDebtDialog } from "@/app/(dashboard)/dashboard/debts/_components/create-debt-dialog";
-import { DebtRow } from "@/app/(dashboard)/dashboard/debts/_components/debt-row";
+import { DebtsTable } from "@/app/(dashboard)/dashboard/debts/_components/debts-table";
 import {
   Card,
   CardContent,
@@ -109,17 +109,11 @@ export default async function DebtsPage() {
         </CardHeader>
         <CardContent className="px-0">
           {debts.length > 0 ? (
-            <ul className="divide-y" aria-label="Dívidas cadastradas">
-              {debtsWithStatus.map(({ debt, status }) => (
-                <DebtRow
-                  key={debt.id}
-                  debt={debt}
-                  status={status}
-                  accounts={activeAccounts}
-                  categories={expenseCategories}
-                />
-              ))}
-            </ul>
+            <DebtsTable
+              rows={debtsWithStatus}
+              accounts={activeAccounts}
+              categories={expenseCategories}
+            />
           ) : (
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <span className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">

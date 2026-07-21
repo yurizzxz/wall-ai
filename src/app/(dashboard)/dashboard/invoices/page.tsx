@@ -1,6 +1,6 @@
 import { ReceiptText } from "lucide-react";
 
-import { InvoiceRow } from "@/app/(dashboard)/dashboard/invoices/_components/invoice-row";
+import { InvoicesTable } from "@/app/(dashboard)/dashboard/invoices/_components/invoices-table";
 import {
   Card,
   CardContent,
@@ -41,8 +41,7 @@ export default async function InvoicesPage() {
   const overdueInCents = invoices
     .filter((invoice) => invoice.status === "OVERDUE")
     .reduce((total, invoice) => total + invoice.outstandingInCents, 0);
-  const now = new Date();
-
+  const nowTimestamp = Date.now();
   return (
     <div className="mx-auto flex w-full flex-col gap-8 py-6 sm:py-8">
       <header className="space-y-1">
@@ -98,17 +97,12 @@ export default async function InvoicesPage() {
         </CardHeader>
         <CardContent className="px-0">
           {invoices.length > 0 ? (
-            <ul className="divide-y" aria-label="Faturas">
-              {invoices.map((invoice) => (
-                <InvoiceRow
-                  key={invoice.id}
-                  invoice={invoice}
-                  canClose={invoice.status === "OPEN" && now >= invoice.closingAt}
-                  accounts={activeAccounts}
-                  categories={expenseCategories}
-                />
-              ))}
-            </ul>
+            <InvoicesTable
+              invoices={invoices}
+              nowTimestamp={nowTimestamp}
+              accounts={activeAccounts}
+              categories={expenseCategories}
+            />
           ) : (
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <span className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">

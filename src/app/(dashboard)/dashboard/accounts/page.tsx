@@ -1,16 +1,7 @@
-import {
-  Banknote,
-  ChartNoAxesCombined,
-  Landmark,
-  PiggyBank,
-  Wallet,
-  WalletCards,
-  type LucideIcon,
-} from "lucide-react";
+import { Wallet, WalletCards } from "lucide-react";
 
+import { AccountsTable } from "@/app/(dashboard)/dashboard/accounts/_components/accounts-table";
 import { CreateAccountDialog } from "@/app/(dashboard)/dashboard/accounts/_components/create-account-dialog";
-import { DeactivateAccountDialog } from "@/app/(dashboard)/dashboard/accounts/_components/deactivate-account-dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -20,59 +11,8 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
 import { listAccounts } from "@/modules/accounts/application/list-accounts";
-import type { AccountListItem } from "@/modules/accounts/application/list-accounts";
-import type { AccountType } from "@/modules/accounts/domain/account";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
-
-const ACCOUNT_TYPE_DETAILS = {
-  CHECKING: { label: "Conta corrente", icon: Landmark },
-  SAVINGS: { label: "Poupança", icon: PiggyBank },
-  CASH: { label: "Dinheiro", icon: Banknote },
-  INVESTMENT: { label: "Investimentos", icon: ChartNoAxesCombined },
-} satisfies Record<AccountType, { label: string; icon: LucideIcon }>;
-
-type AccountRowProps = {
-  account: AccountListItem;
-};
-
-function AccountRow({ account }: AccountRowProps) {
-  const { icon: Icon, label } = ACCOUNT_TYPE_DETAILS[account.type];
-
-  return (
-    <li className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
-          aria-hidden="true"
-        >
-          <Icon className="size-4" />
-        </span>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-sm font-medium">{account.name}</h2>
-            {!account.isActive ? <Badge variant="outline">Inativa</Badge> : null}
-          </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-4 pl-12 sm:justify-end sm:pl-0">
-        <div className="text-left sm:min-w-36 sm:text-right">
-          <p className="font-mono text-sm font-semibold tabular-nums">
-            {formatCurrency(account.balanceInCents)}
-          </p>
-          <p className="text-xs text-muted-foreground">Saldo atual</p>
-        </div>
-        {account.isActive ? (
-          <DeactivateAccountDialog accountId={account.id} accountName={account.name} />
-        ) : (
-          <span className="w-7" aria-hidden="true" />
-        )}
-      </div>
-    </li>
-  );
-}
 
 export default async function AccountsPage() {
   const session = await requireSession();
@@ -145,11 +85,7 @@ export default async function AccountsPage() {
 
         <CardContent className="px-0">
           {accounts.length > 0 ? (
-            <ul className="divide-y" aria-label="Contas cadastradas">
-              {accounts.map((account) => (
-                <AccountRow key={account.id} account={account} />
-              ))}
-            </ul>
+            <AccountsTable accounts={accounts} />
           ) : (
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <span className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
