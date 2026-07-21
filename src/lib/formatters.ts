@@ -1,3 +1,5 @@
+import { AccountType } from "@/modules/accounts/domain/account";
+
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -10,6 +12,7 @@ const compactCurrencyFormatter = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 });
 
+
 export function formatCurrency(cents: number) {
   return currencyFormatter.format(cents / 100);
 }
@@ -17,3 +20,11 @@ export function formatCurrency(cents: number) {
 export function formatCompactCurrency(cents: number) {
   return compactCurrencyFormatter.format(cents / 100);
 }
+
+export const ACCOUNT_TYPE_LABELS = {
+  CHECKING: "Conta corrente",
+  SAVINGS: "Poupança",
+  CASH: "Dinheiro",
+  INVESTMENT: "Investimentos",
+
+} satisfies Record<AccountType, string>;

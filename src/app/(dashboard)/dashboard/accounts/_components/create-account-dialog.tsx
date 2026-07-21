@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ACCOUNT_TYPE_LABELS } from "@/lib/formatters";
 
 const DEFAULT_VALUES: CreateAccountActionInput = {
   name: "",
@@ -58,7 +59,9 @@ export function CreateAccountDialog() {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const form = useForm<CreateAccountActionInput>({
-    resolver: zodResolver(createAccountSchema) as Resolver<CreateAccountActionInput>,
+    resolver: zodResolver(
+      createAccountSchema,
+    ) as Resolver<CreateAccountActionInput>,
     defaultValues: DEFAULT_VALUES,
   });
 
@@ -122,10 +125,15 @@ export function CreateAccountDialog() {
               autoComplete="off"
               placeholder="Ex.: Conta principal"
               aria-invalid={Boolean(form.formState.errors.name)}
-              aria-describedby={form.formState.errors.name ? "account-name-error" : undefined}
+              aria-describedby={
+                form.formState.errors.name ? "account-name-error" : undefined
+              }
               {...form.register("name")}
             />
-            <FieldError id="account-name-error" message={form.formState.errors.name?.message} />
+            <FieldError
+              id="account-name-error"
+              message={form.formState.errors.name?.message}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -141,9 +149,13 @@ export function CreateAccountDialog() {
                     id="account-type"
                     className="w-full"
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.error ? "account-type-error" : undefined}
+                    aria-describedby={
+                      fieldState.error ? "account-type-error" : undefined
+                    }
                   >
-                    <SelectValue />
+                    <SelectValue>
+                      {ACCOUNT_TYPE_LABELS[field.value]}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="CHECKING">Conta corrente</SelectItem>
@@ -154,7 +166,10 @@ export function CreateAccountDialog() {
                 </Select>
               )}
             />
-            <FieldError id="account-type-error" message={form.formState.errors.type?.message} />
+            <FieldError
+              id="account-type-error"
+              message={form.formState.errors.type?.message}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -168,7 +183,9 @@ export function CreateAccountDialog() {
               min="0"
               step="0.01"
               placeholder="0,00"
-              aria-invalid={Boolean(form.formState.errors.initialBalanceInCents)}
+              aria-invalid={Boolean(
+                form.formState.errors.initialBalanceInCents,
+              )}
               aria-describedby={
                 form.formState.errors.initialBalanceInCents
                   ? "account-balance-error"
@@ -178,7 +195,10 @@ export function CreateAccountDialog() {
                 setValueAs: (value: string) => Math.round(Number(value) * 100),
               })}
             />
-            <p id="account-balance-hint" className="text-xs text-muted-foreground">
+            <p
+              id="account-balance-hint"
+              className="text-xs text-muted-foreground"
+            >
               Informe o valor atual disponível nessa conta.
             </p>
             <FieldError
