@@ -1,4 +1,8 @@
-import { AccountType } from "@/modules/accounts/domain/account";
+import type { AccountType } from "@/modules/accounts/domain/account";
+import type {
+  PaymentMethod,
+  TransactionStatus,
+} from "@/modules/transactions/domain/transaction";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -11,7 +15,6 @@ const compactCurrencyFormatter = new Intl.NumberFormat("pt-BR", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
-
 
 export function formatCurrency(cents: number) {
   return currencyFormatter.format(cents / 100);
@@ -31,7 +34,6 @@ export const ACCOUNT_TYPE_LABELS = {
   SAVINGS: "Poupança",
   CASH: "Dinheiro",
   INVESTMENT: "Investimentos",
-
 } satisfies Record<AccountType, string>;
 
 export const PAYMENT_METHODS = [
@@ -41,6 +43,20 @@ export const PAYMENT_METHODS = [
   ["BANK_TRANSFER", "Transferência bancária"],
   ["CREDIT_CARD", "Cartão de crédito"],
 ] as const;
+
+export const PAYMENT_METHOD_LABELS = {
+  PIX: "Pix",
+  CASH: "Dinheiro",
+  DEBIT_CARD: "Cartão de débito",
+  BANK_TRANSFER: "Transferência bancária",
+  CREDIT_CARD: "Cartão de crédito",
+} satisfies Record<PaymentMethod, string>;
+
+export const TRANSACTION_STATUS_LABELS = {
+  PENDING: "Pendente",
+  SETTLED: "Liquidado",
+  CANCELLED: "Cancelado",
+} satisfies Record<TransactionStatus, string>;
 
 export const FREQUENCY_LABELS = {
   WEEKLY: "Semanal",
