@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { CategoryIcon } from "@/components/common/category-icon";
 import {
   Card,
   CardContent,
@@ -19,7 +20,6 @@ import type { CategoryListItem } from "@/modules/categories/application/list-cat
 import type { CategoryKind } from "@/modules/categories/domain/category";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
-import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { CreateCategoryDialog } from "@/app/(dashboard)/dashboard/categories/_components/create-category-dialog";
 
 type CategoryGroupProps = {
@@ -111,13 +111,7 @@ function CategoryGroup({
                     aria-hidden="true"
                   />
 
-                  {category.icon ? (
-                    <DynamicIcon
-                      name={category.icon as IconName}
-                      className="size-3.5"
-                      aria-hidden="true"
-                    />
-                  ) : null}
+                  <CategoryIcon name={category.icon} className="size-3.5" />
 
                   <span>{category.name}</span>
 

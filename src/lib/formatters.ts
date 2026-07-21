@@ -63,3 +63,9 @@ export const FREQUENCY_LABELS = {
   MONTHLY: "Mensal",
   YEARLY: "Anual",
 } satisfies Record<"WEEKLY" | "MONTHLY" | "YEARLY", string>;
+
+export const CATEGORY_KIND_LABELS = {
+  INCOME: "Receita",
+  EXPENSE: "Despesa",
+  BOTH: "Receita e despesa",
+} satisfies Record<"INCOME" | "EXPENSE" | "BOTH", string>;

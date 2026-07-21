@@ -84,6 +84,11 @@ function isActiveRoute(pathname: string, href: string) {
 export function Header({ user }: HeaderProps) {
   const pathname = usePathname();
 
+  const signOut = async () => {
+    await authClient.signOut();
+    window.location.href = "/sign-in";
+  }
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="mx-auto flex w-full justify-between items-center gap-6 px-4 py-2 sm:px-6 lg:px-8">
@@ -153,7 +158,7 @@ export function Header({ user }: HeaderProps) {
                   <Button
                     variant="ghost"
                     className={"p-0"}
-                    onClick={() => authClient.signOut()}
+                    onClick={() => signOut()}
                   >
                     Sair
                   </Button>

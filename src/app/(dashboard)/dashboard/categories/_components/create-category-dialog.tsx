@@ -11,6 +11,7 @@ import {
   createCategorySchema,
   type CreateCategoryActionInput,
 } from "@/actions/categories/schema";
+import { CategoryIconPicker } from "@/app/(dashboard)/dashboard/categories/_components/category-icon-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,12 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CATEGORY_KIND_LABELS } from "@/lib/formatters";
 
 const DEFAULT_VALUES: CreateCategoryActionInput = {
   name: "",
   kind: "EXPENSE",
   color: "#38856f",
-  icon: "",
+  icon: "shapes",
 };
 
 type FieldErrorProps = {
@@ -105,7 +107,7 @@ export function CreateCategoryDialog() {
         <Plus aria-hidden="true" />
         Nova categoria
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base">Nova categoria</DialogTitle>
           <DialogDescription>
@@ -150,7 +152,9 @@ export function CreateCategoryDialog() {
                     aria-invalid={fieldState.invalid}
                     aria-describedby={fieldState.error ? "category-kind-error" : undefined}
                   >
-                    <SelectValue />
+                    <SelectValue>
+                      {[CATEGORY_KIND_LABELS[field.value]]}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="EXPENSE">Despesa</SelectItem>
@@ -166,42 +170,45 @@ export function CreateCategoryDialog() {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_5rem]">
-            <div className="space-y-1.5">
-              <label htmlFor="category-icon" className="text-xs font-medium">
-                Ícone <span className="font-normal text-muted-foreground">(opcional)</span>
-              </label>
-              <Input
-                id="category-icon"
-                autoComplete="off"
-                placeholder="Ex.: 🍔"
-                aria-invalid={Boolean(form.formState.errors.icon)}
-                aria-describedby={form.formState.errors.icon ? "category-icon-error" : undefined}
-                {...form.register("icon")}
-              />
-              <FieldError
-                id="category-icon-error"
-                message={form.formState.errors.icon?.message}
-              />
-            </div>
+          <div className="space-y-1.5">
+            <span className="text-xs font-medium">Ícone</span>
+            <Controller
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <CategoryIconPicker
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
+              )}
+            />
+            <FieldError
+              id="category-icon-error"
+              message={form.formState.errors.icon?.message}
+            />
+          </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="category-color" className="text-xs font-medium">
-                Cor
-              </label>
+          <div className="space-y-1.5">
+            <label htmlFor="category-color" className="text-xs font-medium">
+              Cor
+            </label>
+            <div className="flex items-center gap-3">
               <Input
                 id="category-color"
                 type="color"
-                className="h-7 cursor-pointer p-1"
+                className="size-10 shrink-0 cursor-pointer p-1"
                 aria-invalid={Boolean(form.formState.errors.color)}
                 aria-describedby={form.formState.errors.color ? "category-color-error" : undefined}
                 {...form.register("color")}
               />
-              <FieldError
-                id="category-color-error"
-                message={form.formState.errors.color?.message}
-              />
+              <span className="text-xs text-muted-foreground">
+                Ajuda a reconhecer a categoria nos relatórios.
+              </span>
             </div>
+            <FieldError
+              id="category-color-error"
+              message={form.formState.errors.color?.message}
+            />
           </div>
 
           {form.formState.errors.root?.message ? (
