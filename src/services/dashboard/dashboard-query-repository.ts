@@ -59,7 +59,12 @@ export function createDashboardQueryRepository(
               eq(transactionTable.userId, authenticatedUserId),
             ),
           )
-          .where(eq(financialAccountTable.userId, authenticatedUserId))
+          .where(
+            and(
+              eq(financialAccountTable.userId, authenticatedUserId),
+              eq(financialAccountTable.isActive, true),
+            ),
+          )
           .groupBy(
             financialAccountTable.id,
             financialAccountTable.initialBalanceInCents,
