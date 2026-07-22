@@ -29,6 +29,8 @@ export const processRecurrenceAction = authenticatedAction
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/recurrences");
       revalidatePath("/dashboard/transactions");
+      revalidatePath("/dashboard/credit-cards");
+      revalidatePath("/dashboard/invoices");
 
       return actionSuccess(transaction.id);
     } catch (error) {

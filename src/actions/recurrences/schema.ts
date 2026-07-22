@@ -59,6 +59,10 @@ export const processRecurrenceSchema = z.object({
   recurrenceId: entityIdSchema,
 });
 
+export const deactivateRecurrenceSchema = z.object({
+  recurrenceId: entityIdSchema,
+});
+
 export type CreateRecurrenceActionInput = z.infer<
   typeof createRecurrenceSchema
 >;

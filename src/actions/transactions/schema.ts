@@ -28,6 +28,12 @@ export const createTransactionSchema = z
     creditCardId: entityIdSchema.optional(),
     occurredAt: z.coerce.date("Informe uma data válida."),
     dueAt: z.coerce.date("Informe uma data de vencimento válida.").optional(),
+    installmentCount: z.coerce
+      .number()
+      .int("A quantidade de parcelas deve ser um número inteiro.")
+      .min(1, "Selecione ao menos uma parcela.")
+      .max(48, "O parcelamento pode ter no máximo 48 parcelas.")
+      .default(1),
   })
   .superRefine((input, context) => {
     if (input.paymentMethod === "CREDIT_CARD") {
@@ -68,6 +74,14 @@ export const createTransactionSchema = z
           code: "custom",
           path: ["creditCardId"],
           message: "Somente compras no crédito podem indicar um cartão.",
+        });
+      }
+
+      if (input.installmentCount !== 1) {
+        context.addIssue({
+          code: "custom",
+          path: ["installmentCount"],
+          message: "Parcelamento está disponível somente no cartão de crédito.",
         });
       }
     }

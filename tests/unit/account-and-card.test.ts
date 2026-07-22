@@ -7,6 +7,7 @@ import {
   splitPurchaseIntoInstallments,
   validateCreditCard,
 } from "../../src/modules/credit-cards/domain/credit-card";
+import { calculateInvoiceCycle } from "../../src/modules/invoices/domain/invoice-cycle";
 
 describe("account", () => {
   it("calcula saldo usando somente movimentações liquidadas", () => {
@@ -54,5 +55,30 @@ describe("credit card", () => {
       () => validateCreditCard({ ...validCard, closingDay: 31 }),
       /entre 1 e 28/,
     );
+  });
+});
+
+describe("invoice cycle", () => {
+  it("usa fatura atual para compra antes do fechamento", () => {
+    const cycle = calculateInvoiceCycle({
+      occurredAt: new Date("2026-07-05T12:00:00Z"),
+      closingDay: 10,
+      dueDay: 17,
+    });
+
+    assert.equal(cycle.closingAt.toISOString(), "2026-07-10T23:59:59.999Z");
+    assert.equal(cycle.dueAt.toISOString(), "2026-07-17T23:59:59.999Z");
+  });
+
+  it("avança fatura e parcelas após fechamento", () => {
+    const cycle = calculateInvoiceCycle({
+      occurredAt: new Date("2026-07-11T12:00:00Z"),
+      closingDay: 10,
+      dueDay: 5,
+      monthOffset: 1,
+    });
+
+    assert.equal(cycle.closingAt.toISOString(), "2026-09-10T23:59:59.999Z");
+    assert.equal(cycle.dueAt.toISOString(), "2026-10-05T23:59:59.999Z");
   });
 });

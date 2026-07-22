@@ -34,6 +34,7 @@ function createDefaultValues(accounts: TransactionAccountOption[], categories: T
     accountId: accounts[0]?.id,
     creditCardId: undefined,
     dueAt: undefined,
+    installmentCount: 1,
   };
 }
 

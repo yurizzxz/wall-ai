@@ -27,6 +27,7 @@ export type CreateTransactionInput = {
   creditCardId?: string;
   occurredAt: Date;
   dueAt?: Date;
+  installmentCount?: number;
 };
 
 export function validateTransaction(
@@ -90,6 +91,17 @@ export function validateTransaction(
         "Uma compra no crédito não movimenta uma conta diretamente.",
       );
     }
+
+    if (
+      !Number.isInteger(input.installmentCount ?? 1) ||
+      (input.installmentCount ?? 1) < 1 ||
+      (input.installmentCount ?? 1) > 48
+    ) {
+      throw new BusinessError(
+        "INVALID_INSTALLMENT_COUNT",
+        "A quantidade de parcelas deve estar entre 1 e 48.",
+      );
+    }
   } else if (!input.accountId) {
     throw new BusinessError(
       "TRANSACTION_ACCOUNT_REQUIRED",
@@ -100,11 +112,17 @@ export function validateTransaction(
       "CREDIT_CARD_NOT_ALLOWED",
       "Somente compras no crédito podem indicar um cartão.",
     );
+  } else if ((input.installmentCount ?? 1) !== 1) {
+    throw new BusinessError(
+      "INSTALLMENTS_REQUIRE_CREDIT_CARD",
+      "Parcelamento está disponível somente para cartão de crédito.",
+    );
   }
 
   return {
     ...input,
     description: input.description.trim(),
+    installmentCount: input.installmentCount ?? 1,
   };
 }
 

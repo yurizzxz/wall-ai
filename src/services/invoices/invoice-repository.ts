@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, isNull, lte, ne } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -134,7 +134,8 @@ export function createInvoiceRepository(authenticatedUserId: string) {
               eq(invoiceTable.status, "OPEN"),
             ),
           )
-          .limit(1);
+          .limit(1)
+          .for("update");
 
         if (!currentInvoice) {
           throw new Error("Fatura aberta não encontrada.");
@@ -155,23 +156,9 @@ export function createInvoiceRepository(authenticatedUserId: string) {
               eq(transactionTable.userId, authenticatedUserId),
               eq(transactionTable.creditCardId, currentInvoice.creditCardId),
               ne(transactionTable.status, "CANCELLED"),
-              isNull(creditCardInstallmentTable.invoiceId),
-              gte(creditCardInstallmentTable.dueAt, currentInvoice.periodStart),
-              lte(creditCardInstallmentTable.dueAt, currentInvoice.periodEnd),
+              eq(creditCardInstallmentTable.invoiceId, currentInvoice.id),
             ),
           );
-
-        if (installments.length > 0) {
-          await tx
-            .update(creditCardInstallmentTable)
-            .set({ invoiceId })
-            .where(
-              inArray(
-                creditCardInstallmentTable.id,
-                installments.map((installment) => installment.id),
-              ),
-            );
-        }
 
         const totalInCents = installments.reduce(
           (total, installment) => total + installment.amountInCents,

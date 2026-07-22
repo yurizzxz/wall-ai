@@ -67,7 +67,7 @@ export function TransactionsTable({ transactions, categories, currentPage, pageC
       header: "Origem",
       cell: ({ row }) => {
         const transaction = row.original;
-        return <div className="min-w-48"><p className="text-sm font-medium">{PAYMENT_METHOD_LABELS[transaction.paymentMethod]}</p><p className="mt-0.5 text-xs text-muted-foreground">{transaction.creditCardName ?? transaction.accountName ?? "Não informada"}</p></div>;
+        return <div className="min-w-48"><p className="text-sm font-medium">{PAYMENT_METHOD_LABELS[transaction.paymentMethod]}{transaction.installmentCount && transaction.installmentCount > 1 ? ` · ${transaction.installmentCount}x` : ""}</p><p className="mt-0.5 text-xs text-muted-foreground">{transaction.creditCardName ?? transaction.accountName ?? "Não informada"}</p></div>;
       },
     },
     {

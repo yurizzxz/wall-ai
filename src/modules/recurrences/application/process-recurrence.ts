@@ -34,6 +34,7 @@ export type PersistRecurrenceOccurrenceInput = {
   nextOccurrenceAt: Date;
   nextIsActive: boolean;
   transaction: CreateTransactionInput;
+  creditCardBillingAt?: Date;
 };
 
 export type ProcessRecurrenceDependencies = {
@@ -138,6 +139,8 @@ export async function processRecurrence(
     expectedOccurrenceAt: recurrence.nextOccurrenceAt,
     nextOccurrenceAt,
     nextIsActive,
+    creditCardBillingAt:
+      recurrence.paymentMethod === "CREDIT_CARD" ? now : undefined,
     transaction: {
       userId: input.userId,
       accountId: recurrence.accountId,
@@ -149,7 +152,7 @@ export async function processRecurrence(
       status: "SETTLED",
       paymentMethod: recurrence.paymentMethod,
       occurredAt: recurrence.nextOccurrenceAt,
-      dueAt: recurrence.paymentMethod === "CREDIT_CARD" ? recurrence.nextOccurrenceAt : undefined,
+      dueAt: undefined,
     },
   });
 }

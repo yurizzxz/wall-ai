@@ -3,7 +3,6 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   categoryTable,
-  creditCardInstallmentTable,
   creditCardTable,
   financialAccountTable,
   recurringTransactionTable,
@@ -21,6 +20,7 @@ import type {
 import type { RecurringTransaction } from "@/modules/recurrences/domain/recurrence";
 import type { TransactionRecord } from "@/modules/transactions/application/create-transaction";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
+import { persistCreditCardInstallments } from "@/services/invoices/persist-credit-card-installments";
 
 function toRecurringTransaction(
   row: typeof recurringTransactionTable.$inferSelect,
@@ -248,12 +248,15 @@ export function createRecurrenceRepository(authenticatedUserId: string) {
         }
 
         if (input.transaction.paymentMethod === "CREDIT_CARD") {
-          await tx.insert(creditCardInstallmentTable).values({
+          await persistCreditCardInstallments({
+            tx,
+            userId: authenticatedUserId,
             purchaseId: transaction.id,
-            number: 1,
-            totalCount: 1,
+            creditCardId: input.transaction.creditCardId!,
             amountInCents: input.transaction.amountInCents,
-            dueAt: input.transaction.dueAt ?? input.transaction.occurredAt,
+            installmentCount: 1,
+            occurredAt:
+              input.creditCardBillingAt ?? input.transaction.occurredAt,
           });
         }
 

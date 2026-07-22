@@ -29,6 +29,9 @@ export const createTransactionAction = authenticatedAction
       );
 
       revalidatePath("/dashboard/transactions");
+      revalidatePath("/dashboard");
+      revalidatePath("/dashboard/credit-cards");
+      revalidatePath("/dashboard/invoices");
 
       return actionSuccess(transaction.id);
     } catch (error) {

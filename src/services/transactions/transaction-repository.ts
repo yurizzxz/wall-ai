@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -20,6 +20,7 @@ import type {
 import type { UpdateTransactionInput } from "@/modules/transactions/application/update-transaction";
 import type { CreateTransactionInput } from "@/modules/transactions/domain/transaction";
 import { assertUserScope } from "@/services/shared/assert-user-scope";
+import { persistCreditCardInstallments } from "@/services/invoices/persist-credit-card-installments";
 
 function toTransactionRecord(
   row: typeof transactionTable.$inferSelect,
@@ -136,11 +137,32 @@ export function createTransactionRepository(authenticatedUserId: string) {
           .where(where),
       ]);
       const total = Number(totalResult[0]?.total ?? 0);
+      const installmentCounts = rows.length > 0
+        ? await db
+            .select({
+              purchaseId: creditCardInstallmentTable.purchaseId,
+              totalCount: creditCardInstallmentTable.totalCount,
+            })
+            .from(creditCardInstallmentTable)
+            .where(
+              inArray(
+                creditCardInstallmentTable.purchaseId,
+                rows.map(({ transaction }) => transaction.id),
+              ),
+            )
+        : [];
+      const installmentCountByPurchase = new Map(
+        installmentCounts.map(({ purchaseId, totalCount }) => [
+          purchaseId,
+          totalCount,
+        ]),
+      );
 
       return {
         items: rows.map(
           ({ transaction, categoryName, accountName, creditCardName }): TransactionListItem => ({
             ...toTransactionRecord(transaction),
+            installmentCount: installmentCountByPurchase.get(transaction.id),
             notes: transaction.notes ?? undefined,
             settledAt: transaction.settledAt ?? undefined,
             categoryName,
@@ -182,12 +204,14 @@ export function createTransactionRepository(authenticatedUserId: string) {
         }
 
         if (input.paymentMethod === "CREDIT_CARD") {
-          await tx.insert(creditCardInstallmentTable).values({
+          await persistCreditCardInstallments({
+            tx,
+            userId: authenticatedUserId,
             purchaseId: transaction.id,
-            number: 1,
-            totalCount: 1,
+            creditCardId: input.creditCardId!,
             amountInCents: input.amountInCents,
-            dueAt: input.dueAt ?? input.occurredAt,
+            installmentCount: input.installmentCount ?? 1,
+            occurredAt: input.occurredAt,
           });
         }
 
@@ -260,24 +284,78 @@ export function createTransactionRepository(authenticatedUserId: string) {
           throw new Error("Aporte deve ser estornado pelo fluxo do cofrinho.");
         }
 
-        const [billedInstallment] = await tx
-          .select({ id: creditCardInstallmentTable.id })
+        const installments = await tx
+          .select({
+            invoiceId: creditCardInstallmentTable.invoiceId,
+            amountInCents: creditCardInstallmentTable.amountInCents,
+            invoiceStatus: invoiceTable.status,
+          })
           .from(creditCardInstallmentTable)
-          .where(
-            and(
-              eq(creditCardInstallmentTable.purchaseId, current.id),
-              isNotNull(creditCardInstallmentTable.invoiceId),
-            ),
+          .leftJoin(
+            invoiceTable,
+            eq(invoiceTable.id, creditCardInstallmentTable.invoiceId),
           )
-          .limit(1);
+          .where(
+            eq(creditCardInstallmentTable.purchaseId, current.id),
+          );
 
-        if (billedInstallment) {
+        if (
+          installments.some(
+            (installment) =>
+              installment.invoiceId && installment.invoiceStatus !== "OPEN",
+          )
+        ) {
           throw new Error("Compra faturada deve ser estornada pelo fluxo da fatura.");
+        }
+
+        const reductionsByInvoice = new Map<string, number>();
+        for (const installment of installments) {
+          if (installment.invoiceId) {
+            reductionsByInvoice.set(
+              installment.invoiceId,
+              (reductionsByInvoice.get(installment.invoiceId) ?? 0) +
+                installment.amountInCents,
+            );
+          }
+        }
+
+        for (const [invoiceId, reductionInCents] of reductionsByInvoice) {
+          const [updatedInvoice] = await tx
+            .update(invoiceTable)
+            .set({
+              totalInCents: sql`greatest(0, ${invoiceTable.totalInCents} - ${reductionInCents})`,
+            })
+            .where(
+              and(
+                eq(invoiceTable.id, invoiceId),
+                eq(invoiceTable.userId, authenticatedUserId),
+                eq(invoiceTable.status, "OPEN"),
+              ),
+            )
+            .returning({ id: invoiceTable.id });
+
+          if (!updatedInvoice) {
+            throw new Error("Compra faturada deve ser estornada pelo fluxo da fatura.");
+          }
         }
 
         await tx
           .delete(creditCardInstallmentTable)
           .where(eq(creditCardInstallmentTable.purchaseId, current.id));
+
+        for (const invoiceId of reductionsByInvoice.keys()) {
+          await tx
+            .delete(invoiceTable)
+            .where(
+              and(
+                eq(invoiceTable.id, invoiceId),
+                eq(invoiceTable.userId, authenticatedUserId),
+                eq(invoiceTable.status, "OPEN"),
+                eq(invoiceTable.totalInCents, 0),
+                eq(invoiceTable.paidInCents, 0),
+              ),
+            );
+        }
 
         const [transaction] = await tx
           .update(transactionTable)

@@ -10,6 +10,7 @@ import {
 import { useMemo } from "react";
 
 import { ProcessRecurrenceDialog } from "@/app/(dashboard)/dashboard/recurrences/_components/process-recurrence-dialog";
+import { DeactivateRecurrenceDialog } from "@/app/(dashboard)/dashboard/recurrences/_components/deactivate-recurrence-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters";
@@ -129,15 +130,23 @@ export function RecurrencesTable({ rows, nowTimestamp }: RecurrencesTableProps) 
             recurrence.nextOccurrenceAt.getTime() <= nowTimestamp &&
             (!recurrence.endsAt || recurrence.endsAt.getTime() >= nowTimestamp);
           return (
-            <div className="flex min-w-56 items-center justify-end gap-4">
+            <div className="flex min-w-80 items-center justify-end gap-4">
               <span className={`font-mono text-sm font-semibold tabular-nums ${recurrence.kind === "INCOME" ? "text-emerald-600" : ""}`}>
                 {recurrence.kind === "INCOME" ? "+" : "−"}{formatCurrency(recurrence.amountInCents)}
               </span>
-              {canProcess ? (
-                <ProcessRecurrenceDialog
-                  recurrenceId={recurrence.id}
-                  description={recurrence.description}
-                />
+              {recurrence.isActive ? (
+                <div className="flex items-center gap-1">
+                  {canProcess ? (
+                    <ProcessRecurrenceDialog
+                      recurrenceId={recurrence.id}
+                      description={recurrence.description}
+                    />
+                  ) : null}
+                  <DeactivateRecurrenceDialog
+                    recurrenceId={recurrence.id}
+                    description={recurrence.description}
+                  />
+                </div>
               ) : null}
             </div>
           );

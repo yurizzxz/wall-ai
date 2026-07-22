@@ -14,6 +14,7 @@ import {
 import {
   FREQUENCY_LABELS,
   KIND_LABELS,
+  PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
 } from "@/lib/formatters";
 
@@ -200,7 +201,9 @@ export function RecurrenceFormFields({
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue>
+                    {PAYMENT_METHOD_LABELS[field.value]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {PAYMENT_METHODS.map(([value, label]) => (

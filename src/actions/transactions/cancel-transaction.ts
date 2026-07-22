@@ -21,6 +21,8 @@ export const cancelTransactionAction = authenticatedAction
 
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/transactions");
+      revalidatePath("/dashboard/credit-cards");
+      revalidatePath("/dashboard/invoices");
 
       return actionSuccess(transaction.id);
     } catch (error) {
