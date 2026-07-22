@@ -47,7 +47,7 @@ export function TransactionsTable({ transactions, categories, currentPage, pageC
         return (
           <div className="flex min-w-64 items-center gap-3">
             <span className={`flex size-9 shrink-0 items-center justify-center rounded-md ${isIncome ? "bg-emerald-500/10 text-emerald-600" : "bg-destructive/10 text-destructive"}`}><Icon className="size-4" aria-hidden="true" /></span>
-            <div className="min-w-0"><p className="truncate text-sm font-medium">{transaction.description}</p><p className="mt-0.5 truncate text-xs text-muted-foreground">{transaction.categoryName}</p></div>
+            <div className="min-w-0"><p className="truncate text-sm font-medium">{transaction.description}</p><p className="mt-0.5 truncate text-xs text-muted-foreground">{transaction.origin === "SAVINGS_CONTRIBUTION" ? "Movimentação interna" : transaction.categoryName ?? "Sem categoria"}</p></div>
           </div>
         );
       },
@@ -80,7 +80,7 @@ export function TransactionsTable({ transactions, categories, currentPage, pageC
         return (
           <div className="flex min-w-80 items-center justify-end gap-4">
             <span className={`font-mono text-sm font-semibold tabular-nums ${isCancelled ? "text-muted-foreground line-through" : isIncome ? "text-emerald-600" : ""}`}>{isIncome ? "+" : "−"}{formatCurrency(transaction.amountInCents)}</span>
-            {!isCancelled ? <div className="flex items-center gap-1"><EditTransactionDialog transaction={transaction} categories={categories} /><CancelTransactionDialog transactionId={transaction.id} description={transaction.description} /></div> : null}
+            {!isCancelled && transaction.origin === "STANDARD" && transaction.categoryId ? <div className="flex items-center gap-1"><EditTransactionDialog transaction={transaction} categories={categories} /><CancelTransactionDialog transactionId={transaction.id} description={transaction.description} /></div> : null}
           </div>
         );
       },

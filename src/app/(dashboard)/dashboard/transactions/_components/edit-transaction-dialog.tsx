@@ -30,11 +30,12 @@ export function EditTransactionDialog({ transaction, categories }: EditTransacti
   const compatibleCategories = categories.filter(
     (category) => category.kind === transaction.kind || category.kind === "BOTH",
   );
+  const currentCategoryId = transaction.categoryId;
   const defaultValues: UpdateTransactionInput = {
     transactionId: transaction.id,
     description: transaction.description,
-    categoryId: compatibleCategories.some((category) => category.id === transaction.categoryId)
-      ? transaction.categoryId
+    categoryId: currentCategoryId && compatibleCategories.some((category) => category.id === currentCategoryId)
+      ? currentCategoryId
       : compatibleCategories[0]?.id ?? "",
   };
   const form = useForm<UpdateTransactionInput>({

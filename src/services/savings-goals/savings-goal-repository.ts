@@ -146,11 +146,11 @@ export function createSavingsGoalRepository(authenticatedUserId: string) {
           .values({
             userId: authenticatedUserId,
             accountId: input.accountId,
-            categoryId: input.categoryId,
             description: input.description,
             amountInCents: input.amountInCents,
             kind: "EXPENSE",
             status: "SETTLED",
+            origin: "SAVINGS_CONTRIBUTION",
             paymentMethod: "BANK_TRANSFER",
             occurredAt: input.contributedAt,
             settledAt: input.contributedAt,

@@ -14,7 +14,6 @@ import {
 import {
   ContributionFields,
   type AccountOption,
-  type CategoryOption,
 } from "@/app/(dashboard)/dashboard/savings-goals/_components/contribution-fields";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,23 +30,20 @@ type ContributeToSavingsGoalDialogProps = {
   goalId: string;
   goalName: string;
   accounts: AccountOption[];
-  categories: CategoryOption[];
 };
 
 export function ContributeToSavingsGoalDialog({
   goalId,
   goalName,
   accounts,
-  categories,
 }: ContributeToSavingsGoalDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const hasRequiredOptions = accounts.length > 0 && categories.length > 0;
+  const hasRequiredOptions = accounts.length > 0;
   const defaultValues: ContributeToSavingsGoalActionInput = {
     savingsGoalId: goalId,
     accountId: accounts[0]?.id ?? "",
-    categoryId: categories[0]?.id ?? "",
     amountInCents: 0,
   };
   const form = useForm<ContributeToSavingsGoalActionInput>({
@@ -104,7 +100,7 @@ export function ContributeToSavingsGoalDialog({
 
         {!hasRequiredOptions ? (
           <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground" role="status">
-            Para aportar, você precisa de uma conta ativa e uma categoria de despesa ativa.
+            Para aportar, você precisa de uma conta ativa.
           </p>
         ) : null}
 
@@ -112,7 +108,6 @@ export function ContributeToSavingsGoalDialog({
           <ContributionFields
             goalId={goalId}
             accounts={accounts}
-            categories={categories}
             disabled={!hasRequiredOptions}
             form={form}
           />

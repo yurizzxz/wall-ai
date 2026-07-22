@@ -19,15 +19,9 @@ export type AccountOption = {
   balanceInCents: number;
 };
 
-export type CategoryOption = {
-  id: string;
-  name: string;
-};
-
 type ContributionFieldsProps = {
   goalId: string;
   accounts: AccountOption[];
-  categories: CategoryOption[];
   disabled: boolean;
   form: UseFormReturn<ContributeToSavingsGoalActionInput>;
 };
@@ -50,7 +44,6 @@ function FieldError({ id, message }: FieldErrorProps) {
 export function ContributionFields({
   goalId,
   accounts,
-  categories,
   disabled,
   form,
 }: ContributionFieldsProps) {
@@ -133,51 +126,6 @@ export function ContributionFields({
         />
       </div>
 
-      <div className="space-y-1.5">
-        <label
-          htmlFor={`goal-category-${goalId}`}
-          className="text-xs font-medium"
-        >
-          Categoria
-        </label>
-        <Controller
-          control={form.control}
-          name="categoryId"
-          render={({ field, fieldState }) => (
-            <Select
-              value={field.value}
-              onValueChange={field.onChange}
-              disabled={disabled}
-            >
-              <SelectTrigger
-                id={`goal-category-${goalId}`}
-                className="w-full"
-                aria-invalid={fieldState.invalid}
-                aria-describedby={
-                  fieldState.error ? `goal-category-error-${goalId}` : undefined
-                }
-              >
-                <SelectValue>
-                  {field.value
-                    ? categories.find((c) => c.id === field.value)?.name
-                    : ""}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        <FieldError
-          id={`goal-category-error-${goalId}`}
-          message={form.formState.errors.categoryId?.message}
-        />
-      </div>
     </>
   );
 }

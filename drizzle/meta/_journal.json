@@ -15,6 +15,13 @@
       "when": 1784246791408,
       "tag": "0001_silent_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784689631997,
+      "tag": "0002_large_colossus",
+      "breakpoints": true
     }
   ]
 }

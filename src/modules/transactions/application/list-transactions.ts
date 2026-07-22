@@ -14,7 +14,7 @@ export type ListTransactionsInput = {
 export type TransactionListItem = TransactionRecord & {
   notes?: string;
   settledAt?: Date;
-  categoryName: string;
+  categoryName?: string;
   accountName?: string;
   creditCardName?: string;
 };

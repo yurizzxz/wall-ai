@@ -49,6 +49,11 @@ export const transactionStatusEnum = pgEnum("finance_transaction_status", [
   "CANCELLED",
 ]);
 
+export const transactionOriginEnum = pgEnum("finance_transaction_origin", [
+  "STANDARD",
+  "SAVINGS_CONTRIBUTION",
+]);
+
 export const paymentMethodEnum = pgEnum("finance_payment_method", [
   "CASH",
   "PIX",
@@ -254,9 +259,7 @@ export const transactionTable = pgTable(
     accountId: uuid("account_id").references(() => financialAccountTable.id, {
       onDelete: "restrict",
     }),
-    categoryId: uuid("category_id")
-      .notNull()
-      .references(() => categoryTable.id, { onDelete: "restrict" }),
+    categoryId: uuid("category_id"),
     creditCardId: uuid("credit_card_id").references(
       () => creditCardTable.id,
       { onDelete: "restrict" },
@@ -276,6 +279,7 @@ export const transactionTable = pgTable(
     amountInCents: integer("amount_in_cents").notNull(),
     kind: transactionKindEnum("kind").notNull(),
     status: transactionStatusEnum("status").notNull().default("PENDING"),
+    origin: transactionOriginEnum("origin").notNull().default("STANDARD"),
     paymentMethod: paymentMethodEnum("payment_method").notNull(),
     occurredAt: timestamp("occurred_at", {
       withTimezone: true,
@@ -305,6 +309,19 @@ export const transactionTable = pgTable(
     sourceRecurringTransactionIdx: index(
       "transaction_source_recurring_transaction_id_idx",
     ).on(t.sourceRecurringTransactionId),
+    categoryOwnerFk: foreignKey({
+      columns: [t.userId, t.categoryId],
+      foreignColumns: [categoryTable.userId, categoryTable.id],
+      name: "transaction_user_category_fk",
+    }).onDelete("restrict"),
+    categoryRequiredCheck: check(
+      "transaction_category_required_chk",
+      sql`(
+        (${t.origin} = 'SAVINGS_CONTRIBUTION' and ${t.categoryId} is null)
+        or
+        (${t.origin} = 'STANDARD' and ${t.categoryId} is not null)
+      )`,
+    ),
   }),
 );
 

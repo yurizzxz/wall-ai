@@ -13,11 +13,14 @@ import type { AmountInCents } from "../../shared/domain/money";
 import {
   validateTransaction,
   type CreateTransactionInput,
+  type TransactionOrigin,
 } from "../domain/transaction";
 import { BusinessError } from "../../shared/application/business-error";
 
-export type TransactionRecord = CreateTransactionInput & {
+export type TransactionRecord = Omit<CreateTransactionInput, "categoryId"> & {
   id: string;
+  origin: TransactionOrigin;
+  categoryId?: string;
   paidInvoiceId?: string;
   sourceRecurringTransactionId?: string;
 };

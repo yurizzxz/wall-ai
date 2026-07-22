@@ -11,14 +11,12 @@ import { createRepositories } from "@/services/repositories";
 export const contributeToSavingsGoalAction = authenticatedAction
   .inputSchema(contributeToSavingsGoalSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const { accounts, categories, savingsGoals } = createRepositories(
-      ctx.user.id,
-    );
+    const { accounts, savingsGoals } = createRepositories(ctx.user.id);
 
     try {
       const goal = await contributeToSavingsGoal(
         { ...parsedInput, userId: ctx.user.id },
-        { accounts, categories, savingsGoals, now: () => new Date() },
+        { accounts, savingsGoals, now: () => new Date() },
       );
 
       revalidatePath("/dashboard");

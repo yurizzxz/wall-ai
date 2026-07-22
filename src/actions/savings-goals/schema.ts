@@ -19,7 +19,6 @@ export const createSavingsGoalSchema = z.object({
 export const contributeToSavingsGoalSchema = z.object({
   savingsGoalId: entityIdSchema,
   accountId: entityIdSchema,
-  categoryId: entityIdSchema,
   amountInCents: positiveAmountInCentsSchema,
 });
 

@@ -122,6 +122,7 @@ describe("financial flow", () => {
           const transaction: TransactionRecord = {
             ...input,
             id: `transaction-${transactions.length + 1}`,
+            origin: "STANDARD",
           };
           transactions.push(transaction);
 
@@ -229,6 +230,7 @@ describe("financial flow", () => {
             amountInCents: input.amountInCents,
             kind: "EXPENSE",
             status: "SETTLED",
+            origin: "STANDARD",
             paymentMethod: input.paymentMethod,
             occurredAt: input.paidAt,
           });

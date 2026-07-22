@@ -2,10 +2,6 @@ import {
   assertAccountCanReceiveMovements,
   type Account,
 } from "../../accounts/domain/account";
-import {
-  assertCategoryAcceptsTransaction,
-  type Category,
-} from "../../categories/domain/category";
 import type { AmountInCents } from "../../shared/domain/money";
 import {
   assertSavingsContribution,
@@ -19,7 +15,6 @@ export type ContributeToSavingsGoalInput = {
   userId: string;
   savingsGoalId: string;
   accountId: string;
-  categoryId: string;
   amountInCents: AmountInCents;
 };
 
@@ -45,9 +40,6 @@ export type ContributeToSavingsGoalDependencies = {
   accounts: {
     findById(userId: string, accountId: string): Promise<Account | null>;
   };
-  categories: {
-    findById(userId: string, categoryId: string): Promise<Category | null>;
-  };
   now(): Date;
 };
 
@@ -55,13 +47,12 @@ export async function contributeToSavingsGoal(
   input: ContributeToSavingsGoalInput,
   dependencies: ContributeToSavingsGoalDependencies,
 ): Promise<SavingsGoal> {
-  const [goal, account, category] = await Promise.all([
+  const [goal, account] = await Promise.all([
     dependencies.savingsGoals.findById(
       input.userId,
       input.savingsGoalId,
     ),
     dependencies.accounts.findById(input.userId, input.accountId),
-    dependencies.categories.findById(input.userId, input.categoryId),
   ]);
 
   if (!goal) {
@@ -78,15 +69,7 @@ export async function contributeToSavingsGoal(
     );
   }
 
-  if (!category) {
-    throw new BusinessError(
-      "CATEGORY_NOT_FOUND",
-      "Categoria não encontrada para esse usuário.",
-    );
-  }
-
   assertAccountCanReceiveMovements(account);
-  assertCategoryAcceptsTransaction(category, "EXPENSE");
   assertSavingsContribution(goal, input.amountInCents);
 
   const contributedAt = dependencies.now();

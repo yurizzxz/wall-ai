@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatters";
 import { listAccounts } from "@/modules/accounts/application/list-accounts";
-import { listCategories } from "@/modules/categories/application/list-categories";
 import { listSavingsGoals } from "@/modules/savings-goals/application/list-savings-goals";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
@@ -19,21 +18,13 @@ import { requireSession } from "@/services/users/require-session";
 export default async function SavingsGoalsPage() {
   const session = await requireSession();
   const repositories = createRepositories(session.user.id);
-  const [goals, accounts, categories] = await Promise.all([
+  const [goals, accounts] = await Promise.all([
     listSavingsGoals({ userId: session.user.id }, repositories.savingsGoals),
     listAccounts(session.user.id, repositories.accounts),
-    listCategories(session.user.id, repositories.categories),
   ]);
   const activeAccounts = accounts
     .filter((account) => account.isActive)
     .map(({ id, name, balanceInCents }) => ({ id, name, balanceInCents }));
-  const expenseCategories = categories
-    .filter(
-      (category) =>
-        category.isActive &&
-        (category.kind === "EXPENSE" || category.kind === "BOTH"),
-    )
-    .map(({ id, name }) => ({ id, name }));
   const trackedGoals = goals.filter((goal) => goal.status !== "CANCELLED");
   const totals = trackedGoals.reduce(
     (result, goal) => ({
@@ -105,7 +96,6 @@ export default async function SavingsGoalsPage() {
             <SavingsGoalsTable
               goals={goals}
               accounts={activeAccounts}
-              categories={expenseCategories}
             />
           ) : (
             <div className="flex flex-col items-center px-6 py-12 text-center">

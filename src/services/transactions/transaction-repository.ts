@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, notExists, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -32,8 +32,9 @@ function toTransactionRecord(
     amountInCents: row.amountInCents,
     kind: row.kind,
     status: row.status,
+    origin: row.origin,
     paymentMethod: row.paymentMethod,
-    categoryId: row.categoryId,
+    categoryId: row.categoryId ?? undefined,
     accountId: row.accountId ?? undefined,
     creditCardId: row.creditCardId ?? undefined,
     paidInvoiceId: row.paidInvoiceId ?? undefined,
@@ -106,7 +107,7 @@ export function createTransactionRepository(authenticatedUserId: string) {
             creditCardName: creditCardTable.name,
           })
           .from(transactionTable)
-          .innerJoin(
+          .leftJoin(
             categoryTable,
             and(
               eq(categoryTable.id, transactionTable.categoryId),
@@ -165,7 +166,7 @@ export function createTransactionRepository(authenticatedUserId: string) {
             installmentCount: installmentCountByPurchase.get(transaction.id),
             notes: transaction.notes ?? undefined,
             settledAt: transaction.settledAt ?? undefined,
-            categoryName,
+            categoryName: categoryName ?? undefined,
             accountName: accountName ?? undefined,
             creditCardName: creditCardName ?? undefined,
           }),
@@ -229,6 +230,17 @@ export function createTransactionRepository(authenticatedUserId: string) {
           and(
             eq(transactionTable.id, input.transactionId),
             eq(transactionTable.userId, authenticatedUserId),
+            notExists(
+              db
+                .select({ id: savingsContributionTable.id })
+                .from(savingsContributionTable)
+                .where(
+                  eq(
+                    savingsContributionTable.transactionId,
+                    transactionTable.id,
+                  ),
+                ),
+            ),
           ),
         )
         .returning();

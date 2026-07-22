@@ -6,6 +6,7 @@ import { BusinessError } from "../../shared/application/business-error";
 
 export type TransactionKind = "INCOME" | "EXPENSE";
 export type TransactionStatus = "PENDING" | "SETTLED" | "CANCELLED";
+export type TransactionOrigin = "STANDARD" | "SAVINGS_CONTRIBUTION";
 export type PaymentMethod =
   | "CASH"
   | "PIX"

@@ -5,10 +5,7 @@ import { CalendarDays, CircleCheck, Target } from "lucide-react";
 import { useMemo } from "react";
 
 import { ContributeToSavingsGoalDialog } from "@/app/(dashboard)/dashboard/savings-goals/_components/contribute-to-savings-goal-dialog";
-import type {
-  AccountOption,
-  CategoryOption,
-} from "@/app/(dashboard)/dashboard/savings-goals/_components/contribution-fields";
+import type { AccountOption } from "@/app/(dashboard)/dashboard/savings-goals/_components/contribution-fields";
 import { DataTable } from "@/components/common/data-table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters";
@@ -34,13 +31,11 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 type SavingsGoalsTableProps = {
   goals: SavingsGoalListItem[];
   accounts: AccountOption[];
-  categories: CategoryOption[];
 };
 
 export function SavingsGoalsTable({
   goals,
   accounts,
-  categories,
 }: SavingsGoalsTableProps) {
   const columns = useMemo<ColumnDef<SavingsGoalListItem>[]>(
     () => [
@@ -121,7 +116,6 @@ export function SavingsGoalsTable({
                   goalId={goal.id}
                   goalName={goal.name}
                   accounts={accounts}
-                  categories={categories}
                 />
               ) : null}
             </div>
@@ -129,7 +123,7 @@ export function SavingsGoalsTable({
         },
       },
     ],
-    [accounts, categories],
+    [accounts],
   );
 
   return (
