@@ -1,13 +1,19 @@
 import type { AmountInCents } from "../../shared/domain/money";
 
-export type DashboardSummary = {
+export type DashboardIndicators = {
   totalBalanceInCents: AmountInCents;
   monthlyIncomeInCents: AmountInCents;
   monthlyExpenseInCents: AmountInCents;
+  pendingTransactionCount: number;
+};
+
+export type DashboardCommitments = {
   pendingDebtsInCents: AmountInCents;
   openInvoicesInCents: AmountInCents;
   savedInCents: AmountInCents;
-  pendingTransactionCount: number;
+};
+
+export type DashboardChartsData = {
   cashFlow: DashboardCashFlowPoint[];
   expensesByCategory: DashboardCategoryExpense[];
 };
@@ -23,40 +29,68 @@ export type DashboardCategoryExpense = {
   totalInCents: AmountInCents;
 };
 
-export type GetDashboardSummaryInput = {
+export type DashboardPeriodInput = {
   userId: string;
   periodStart: Date;
   periodEnd: Date;
+};
+
+export type DashboardTrendInput = DashboardPeriodInput & {
   trendStart: Date;
 };
 
 export type DashboardQueryRepository = {
-  getSummary(input: GetDashboardSummaryInput): Promise<DashboardSummary>;
+  getIndicators(input: DashboardPeriodInput): Promise<DashboardIndicators>;
+  getCharts(input: DashboardTrendInput): Promise<DashboardChartsData>;
+  getCommitments(userId: string): Promise<DashboardCommitments>;
 };
 
-export async function getDashboardSummary(
-  input: GetDashboardSummaryInput,
-  repository: DashboardQueryRepository,
-): Promise<DashboardSummary> {
-  if (!input.userId) {
+function assertUserId(userId: string) {
+  if (!userId) {
     throw new Error("O resumo precisa pertencer a um usuário.");
   }
+}
 
+function assertPeriod(input: DashboardPeriodInput) {
   if (
     Number.isNaN(input.periodStart.getTime()) ||
     Number.isNaN(input.periodEnd.getTime()) ||
-    Number.isNaN(input.trendStart.getTime())
+    input.periodStart >= input.periodEnd
   ) {
     throw new Error("O período do resumo é inválido.");
   }
+}
 
-  if (input.periodStart >= input.periodEnd) {
-    throw new Error("O início do período deve vir antes do fim.");
+export async function getDashboardIndicators(
+  input: DashboardPeriodInput,
+  repository: DashboardQueryRepository,
+) {
+  assertUserId(input.userId);
+  assertPeriod(input);
+  return repository.getIndicators(input);
+}
+
+export async function getDashboardCharts(
+  input: DashboardTrendInput,
+  repository: DashboardQueryRepository,
+) {
+  assertUserId(input.userId);
+  assertPeriod(input);
+
+  if (
+    Number.isNaN(input.trendStart.getTime()) ||
+    input.trendStart > input.periodStart
+  ) {
+    throw new Error("O histórico do resumo é inválido.");
   }
 
-  if (input.trendStart > input.periodStart) {
-    throw new Error("O histórico do resumo deve começar antes do período atual.");
-  }
+  return repository.getCharts(input);
+}
 
-  return repository.getSummary(input);
+export async function getDashboardCommitments(
+  userId: string,
+  repository: DashboardQueryRepository,
+) {
+  assertUserId(userId);
+  return repository.getCommitments(userId);
 }

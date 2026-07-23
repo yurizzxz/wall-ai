@@ -1,66 +1,37 @@
-import { ArrowDownRight, ArrowUpRight, CircleDollarSign, Clock3, Plus, Scale } from "lucide-react";
-import Link from "next/link";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
-import { DashboardCharts } from "@/components/common/dashboard-charts";
-import { DashboardKpiCard } from "@/components/common/dashboard-kpi-card";
-import { Badge } from "@/components/ui/badge";
+import { DashboardChartsSection } from "@/app/(dashboard)/dashboard/_components/dashboard-charts-section";
+import { DashboardCommitments } from "@/app/(dashboard)/dashboard/_components/dashboard-commitments";
+import { DashboardIndicators } from "@/app/(dashboard)/dashboard/_components/dashboard-indicators";
+import {
+  DashboardChartsSkeleton,
+  DashboardCommitmentsSkeleton,
+  DashboardIndicatorsSkeleton,
+} from "@/app/(dashboard)/dashboard/_components/dashboard-section-skeletons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/formatters";
-import { getDashboardSummary } from "@/modules/dashboard/application/get-dashboard-summary";
-import type { DashboardCashFlowPoint } from "@/modules/dashboard/application/get-dashboard-summary";
-import { createRepositories } from "@/services/repositories";
-import { requireSession } from "@/services/users/require-session";
 
 export const metadata: Metadata = {
   title: "Visão geral",
   description: "Acompanhe o resumo da sua vida financeira.",
 };
 
-function getDashboardPeriods() {
+async function getDashboardPeriods() {
+  await connection();
   const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const trendStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  return { periodStart, periodEnd, trendStart };
-}
-
-function fillCashFlowMonths(
-  points: DashboardCashFlowPoint[],
-  trendStart: Date,
-  periodEnd: Date,
-) {
-  const pointsByMonth = new Map(points.map((point) => [point.month, point]));
-  const months: DashboardCashFlowPoint[] = [];
-  const cursor = new Date(trendStart);
-
-  while (cursor < periodEnd) {
-    const month = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
-    months.push(
-      pointsByMonth.get(month) ?? {
-        month,
-        incomeInCents: 0,
-        expenseInCents: 0,
-      },
-    );
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-
-  return months;
+  return {
+    periodStart: new Date(now.getFullYear(), now.getMonth(), 1),
+    periodEnd: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+    trendStart: new Date(now.getFullYear(), now.getMonth() - 5, 1),
+  };
 }
 
 export default async function DashboardPage() {
-  const session = await requireSession();
-  const repositories = createRepositories(session.user.id);
-  const periods = getDashboardPeriods();
-  const summary = await getDashboardSummary(
-    { userId: session.user.id, ...periods },
-    repositories.dashboard,
-  );
-  const monthlyResult = summary.monthlyIncomeInCents - summary.monthlyExpenseInCents;
-  const cashFlow = fillCashFlowMonths(summary.cashFlow, periods.trendStart, periods.periodEnd);
+  const periods = await getDashboardPeriods();
 
   return (
     <div className="mx-auto flex w-full flex-col gap-8 py-6 sm:py-8">
@@ -80,72 +51,20 @@ export default async function DashboardPage() {
         </Button>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6" aria-label="Indicadores financeiros">
-        <div className="sm:col-span-2 xl:col-span-2">
-          <DashboardKpiCard
-            label="Saldo disponível"
-            value={formatCurrency(summary.totalBalanceInCents)}
-            description="Soma das contas ativas"
-            icon={CircleDollarSign}
-            featured
-          />
-        </div>
-        <DashboardKpiCard
-          label="Receitas"
-          value={formatCurrency(summary.monthlyIncomeInCents)}
-          description="Liquidadas neste mês"
-          icon={ArrowUpRight}
-          valueTone="positive"
+      <Suspense fallback={<DashboardIndicatorsSkeleton />}>
+        <DashboardIndicators
+          periodStart={periods.periodStart}
+          periodEnd={periods.periodEnd}
         />
-        <DashboardKpiCard
-          label="Despesas"
-          value={formatCurrency(summary.monthlyExpenseInCents)}
-          description="Liquidadas neste mês"
-          icon={ArrowDownRight}
-          valueTone="negative"
-        />
-        <DashboardKpiCard
-          label="Resultado mensal"
-          value={formatCurrency(monthlyResult)}
-          description={monthlyResult >= 0 ? "Mês fechando no positivo" : "Despesas acima das receitas"}
-          icon={Scale}
-          valueTone={monthlyResult >= 0 ? "positive" : "negative"}
-        />
-        <DashboardKpiCard
-          label="Pendências"
-          value={String(summary.pendingTransactionCount)}
-          description="Lançamentos aguardando baixa"
-          icon={Clock3}
-        />
-      </section>
+      </Suspense>
 
-      <DashboardCharts cashFlow={cashFlow} expensesByCategory={summary.expensesByCategory} />
+      <Suspense fallback={<DashboardChartsSkeleton />}>
+        <DashboardChartsSection {...periods} />
+      </Suspense>
 
-      <section aria-labelledby="commitments-title">
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle id="commitments-title">Compromissos e reservas</CardTitle>
-            <CardDescription>Valores acumulados que merecem acompanhamento.</CardDescription>
-          </CardHeader>
-          <CardContent className="divide-y px-0">
-            {[
-              { label: "Faturas em aberto", value: summary.openInvoicesInCents, href: "/dashboard/invoices", badge: "A pagar" },
-              { label: "Dívidas pendentes", value: summary.pendingDebtsInCents, href: "/dashboard/debts", badge: "Acompanhar" },
-              { label: "Guardado em metas", value: summary.savedInCents, href: "/dashboard/savings-goals", badge: "Reserva" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex min-h-14 items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted sm:px-6"
-              >
-                <span className="min-w-0 flex-1 text-sm font-medium">{item.label}</span>
-                <Badge variant="secondary" className="hidden sm:inline-flex">{item.badge}</Badge>
-                <span className="font-mono text-sm font-semibold tabular-nums">{formatCurrency(item.value)}</span>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-      </section>
+      <Suspense fallback={<DashboardCommitmentsSkeleton />}>
+        <DashboardCommitments />
+      </Suspense>
     </div>
   );
 }
