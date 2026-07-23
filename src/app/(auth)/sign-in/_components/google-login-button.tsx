@@ -1,12 +1,43 @@
 "use client";
+
+import { useState } from "react";
+
+import { GoogleIcon } from "@/app/(auth)/_components/google-icon";
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
-export function GoogleSignInButton() {
+type GoogleSignInButtonProps = {
+  label?: string;
+};
+
+export function GoogleSignInButton({
+  label = "Entrar com Google",
+}: GoogleSignInButtonProps) {
+  const [isPending, setIsPending] = useState(false);
+
+  async function signInWithGoogle() {
+    setIsPending(true);
+
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+    } finally {
+      setIsPending(false);
+    }
+  }
+
   return (
-    <button
-      onClick={() => authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })}
+    <Button
+      type="button"
+      variant="outline"
+      className="w-full"
+      disabled={isPending}
+      onClick={signInWithGoogle}
     >
-      Entrar com Google
-    </button>
+      {!isPending && <GoogleIcon className="size-4" />}
+      {isPending ? "Redirecionando..." : label}
+    </Button>
   );
 }
