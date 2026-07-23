@@ -4,8 +4,10 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -27,6 +29,7 @@ type DataTableProps<TData> = {
   pageCount?: number;
   total?: number;
   pageSize?: number;
+  getRowClassName?: (row: TData) => string | undefined;
 };
 
 export function DataTable<TData>({
@@ -39,20 +42,41 @@ export function DataTable<TData>({
   pageCount,
   total,
   pageSize = Math.max(data.length, 1),
+  getRowClassName,
 }: DataTableProps<TData>) {
+  const [localPageIndex, setLocalPageIndex] = useState(0);
+  const hasServerPagination = pageCount !== undefined && total !== undefined;
+  const localPageCount = Math.max(Math.ceil(data.length / pageSize), 1);
+  const safeLocalPageIndex = Math.min(localPageIndex, localPageCount - 1);
+  const resolvedCurrentPage = hasServerPagination
+    ? currentPage
+    : safeLocalPageIndex + 1;
+  const resolvedPageCount = hasServerPagination ? pageCount : localPageCount;
+  const resolvedTotal = hasServerPagination ? total : data.length;
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount: pageCount ?? 1,
+    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: hasServerPagination,
+    pageCount: resolvedPageCount,
     state: {
-      pagination: { pageIndex: currentPage - 1, pageSize },
+      pagination: {
+        pageIndex: hasServerPagination
+          ? resolvedCurrentPage - 1
+          : safeLocalPageIndex,
+        pageSize,
+      },
     },
   });
 
   return (
-    <div className={cn(pageCount && "space-y-4")}>
+    <div
+      className={cn(
+        (hasServerPagination || data.length > pageSize) && "space-y-4",
+      )}
+    >
       <div className={cn("overflow-hidden rounded-lg border", containerClassName)}>
         <Table>
           <TableHeader className="bg-card">
@@ -79,7 +103,10 @@ export function DataTable<TData>({
 
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow
+                key={row.id}
+                className={getRowClassName?.(row.original)}
+              >
                 {row.getVisibleCells().map((cell, index) => {
                   const isLast = rightColumn && index === row.getVisibleCells().length - 1;
                   return (
@@ -103,12 +130,17 @@ export function DataTable<TData>({
         </Table>
       </div>
 
-      {pageCount && total !== undefined ? (
+      {hasServerPagination || data.length > pageSize ? (
         <DataTablePagination
-          currentPage={currentPage}
-          pageCount={pageCount}
-          total={total}
+          currentPage={resolvedCurrentPage}
+          pageCount={resolvedPageCount}
+          total={resolvedTotal}
           pageSize={pageSize}
+          onPageChange={
+            hasServerPagination
+              ? undefined
+              : (page) => setLocalPageIndex(page - 1)
+          }
         />
       ) : null}
     </div>

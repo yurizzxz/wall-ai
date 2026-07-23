@@ -164,6 +164,9 @@ export function RecurrencesTable({ rows, nowTimestamp }: RecurrencesTableProps) 
       pageSize={10}
       cellClassName="py-4"
       containerClassName="rounded-none border-0"
+      getRowClassName={(recurrence) =>
+        !recurrence.isActive ? "opacity-50" : undefined
+      }
     />
   );
 }

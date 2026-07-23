@@ -151,6 +151,7 @@ export function InvoicesTable({
       data={invoices}
       columns={columns}
       rightColumn
+      pageSize={10}
       cellClassName="py-4"
       containerClassName="rounded-none border-0"
     />

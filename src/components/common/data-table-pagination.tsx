@@ -9,14 +9,26 @@ type Props = {
   pageCount: number;
   total: number;
   pageSize: number;
+  onPageChange?: (page: number) => void;
 };
 
-export function DataTablePagination({ currentPage, pageCount, total, pageSize }: Props) {
+export function DataTablePagination({
+  currentPage,
+  pageCount,
+  total,
+  pageSize,
+  onPageChange,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const goTo = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+      return;
+    }
+
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
     router.push(`${pathname}?${params.toString()}`);
@@ -33,18 +45,22 @@ export function DataTablePagination({ currentPage, pageCount, total, pageSize }:
 
       <div className="flex items-center gap-1">
         <Button
+          type="button"
           variant="outline"
           size="icon"
           onClick={() => goTo(1)}
           disabled={currentPage <= 1}
+          aria-label="Ir para a primeira página"
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant="outline"
           size="icon"
           onClick={() => goTo(currentPage - 1)}
           disabled={currentPage <= 1}
+          aria-label="Ir para a página anterior"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -54,18 +70,22 @@ export function DataTablePagination({ currentPage, pageCount, total, pageSize }:
         </span>
 
         <Button
+          type="button"
           variant="outline"
           size="icon"
           onClick={() => goTo(currentPage + 1)}
           disabled={currentPage >= pageCount}
+          aria-label="Ir para a próxima página"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant="outline"
           size="icon"
           onClick={() => goTo(pageCount)}
           disabled={currentPage >= pageCount}
+          aria-label="Ir para a última página"
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>

@@ -96,8 +96,12 @@ export function CreditCardsTable({ cards }: CreditCardsTableProps) {
       data={cards}
       columns={columns}
       rightColumn
+      pageSize={10}
       cellClassName="py-4"
       containerClassName="rounded-none border-0"
+      getRowClassName={(card) =>
+        !card.isActive ? "opacity-50" : undefined
+      }
     />
   );
 }

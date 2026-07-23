@@ -77,8 +77,12 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
       data={accounts}
       columns={columns}
       rightColumn
+      pageSize={10}
       cellClassName="py-4"
       containerClassName="rounded-none border-0"
+      getRowClassName={(account) =>
+        !account.isActive ? "opacity-50" : undefined
+      }
     />
   );
 }

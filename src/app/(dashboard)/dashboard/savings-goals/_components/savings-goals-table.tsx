@@ -131,8 +131,12 @@ export function SavingsGoalsTable({
       data={goals}
       columns={columns}
       rightColumn
+      pageSize={10}
       cellClassName="py-4"
       containerClassName="rounded-none border-0"
+      getRowClassName={(goal) =>
+        goal.status === "CANCELLED" ? "opacity-50" : undefined
+      }
     />
   );
 }
