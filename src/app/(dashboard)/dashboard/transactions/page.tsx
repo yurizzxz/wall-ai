@@ -1,4 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, ListFilter, ReceiptText } from "lucide-react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { CreateTransactionDialog } from "@/app/(dashboard)/dashboard/transactions/_components/create-transaction-dialog";
@@ -22,6 +23,11 @@ import type {
 } from "@/modules/transactions/domain/transaction";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Lançamentos",
+  description: "Consulte e gerencie suas receitas e despesas.",
+};
 
 const PAGE_SIZE = 10;
 const TRANSACTION_KINDS = new Set<TransactionKind>(["INCOME", "EXPENSE"]);

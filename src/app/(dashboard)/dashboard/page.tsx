@@ -1,5 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, CircleDollarSign, Clock3, Plus, Scale } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { DashboardCharts } from "@/components/common/dashboard-charts";
 import { DashboardKpiCard } from "@/components/common/dashboard-kpi-card";
@@ -11,6 +12,11 @@ import { getDashboardSummary } from "@/modules/dashboard/application/get-dashboa
 import type { DashboardCashFlowPoint } from "@/modules/dashboard/application/get-dashboard-summary";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Visão geral",
+  description: "Acompanhe o resumo da sua vida financeira.",
+};
 
 function getDashboardPeriods() {
   const now = new Date();

@@ -5,6 +5,7 @@ import {
   Tags,
   type LucideIcon,
 } from "lucide-react";
+import type { Metadata } from "next";
 
 import { Badge } from "@/components/ui/badge";
 import { CategoryIcon } from "@/components/common/category-icon";
@@ -21,6 +22,11 @@ import type { CategoryKind } from "@/modules/categories/domain/category";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
 import { CreateCategoryDialog } from "@/app/(dashboard)/dashboard/categories/_components/create-category-dialog";
+
+export const metadata: Metadata = {
+  title: "Categorias",
+  description: "Organize seus lançamentos por categoria.",
+};
 
 type CategoryGroupProps = {
   id: string;

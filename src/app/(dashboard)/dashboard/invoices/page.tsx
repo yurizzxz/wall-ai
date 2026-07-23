@@ -1,4 +1,5 @@
 import { ReceiptText } from "lucide-react";
+import type { Metadata } from "next";
 import { connection } from "next/server";
 
 import { InvoicesTable } from "@/app/(dashboard)/dashboard/invoices/_components/invoices-table";
@@ -15,6 +16,11 @@ import { listCategories } from "@/modules/categories/application/list-categories
 import { listInvoices } from "@/modules/invoices/application/list-invoices";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Faturas",
+  description: "Acompanhe fechamentos, vencimentos e pagamentos dos cartões.",
+};
 
 async function getRequestTimestamp() {
   await connection();

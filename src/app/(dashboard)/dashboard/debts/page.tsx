@@ -1,4 +1,5 @@
 import { HandCoins } from "lucide-react";
+import type { Metadata } from "next";
 
 import { CreateDebtDialog } from "@/app/(dashboard)/dashboard/debts/_components/create-debt-dialog";
 import { DebtsTable } from "@/app/(dashboard)/dashboard/debts/_components/debts-table";
@@ -16,6 +17,11 @@ import { listDebts } from "@/modules/debts/application/list-debts";
 import { deriveDebtStatus } from "@/modules/debts/domain/debt";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Dívidas",
+  description: "Acompanhe suas dívidas, parcelas e pagamentos.",
+};
 
 export default async function DebtsPage() {
   const session = await requireSession();

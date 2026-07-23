@@ -1,4 +1,5 @@
 import { CreditCard, WalletCards } from "lucide-react";
+import type { Metadata } from "next";
 
 import { CreditCardsTable } from "@/app/(dashboard)/dashboard/credit-cards/_components/credit-cards-table";
 import { CreateCreditCardDialog } from "@/app/(dashboard)/dashboard/credit-cards/_components/create-credit-card-dialog";
@@ -13,6 +14,11 @@ import { formatCurrency } from "@/lib/formatters";
 import { listCreditCards } from "@/modules/credit-cards/application/list-credit-cards";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Cartões de crédito",
+  description: "Gerencie seus cartões, limites e valores comprometidos.",
+};
 
 export default async function CreditCardsPage() {
   const session = await requireSession();

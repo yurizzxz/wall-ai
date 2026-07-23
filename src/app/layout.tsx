@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
 
 import "./globals.css";
@@ -10,8 +9,12 @@ const ibmPlexSansHeading = IBM_Plex_Sans({subsets:['latin'],variable:'--font-hea
 const nunitoSans = Nunito_Sans({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "Wallai",
-  description: "Controle financeiro",
+  title: {
+    default: "Wallai",
+    template: "%s | Wallai",
+  },
+  description:
+    "Organize contas, cartões, lançamentos e metas financeiras em um só lugar.",
 };
 
 export default function RootLayout({

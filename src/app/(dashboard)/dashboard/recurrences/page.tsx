@@ -1,4 +1,5 @@
 import { RefreshCcw } from "lucide-react";
+import type { Metadata } from "next";
 
 import { CreateRecurrenceDialog } from "@/app/(dashboard)/dashboard/recurrences/_components/create-recurrence-dialog";
 import { RecurrencesTable } from "@/app/(dashboard)/dashboard/recurrences/_components/recurrences-table";
@@ -16,6 +17,11 @@ import { listRecurrences } from "@/modules/recurrences/application/list-recurren
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
 import { connection } from "next/server";
+
+export const metadata: Metadata = {
+  title: "Recorrências",
+  description: "Gerencie seus lançamentos e assinaturas recorrentes.",
+};
 
 async function getRequestTimestamp() {
   await connection();

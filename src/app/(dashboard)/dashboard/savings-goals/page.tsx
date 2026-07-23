@@ -1,4 +1,5 @@
 import { PiggyBank, Target } from "lucide-react";
+import type { Metadata } from "next";
 
 import { CreateSavingsGoalDialog } from "@/app/(dashboard)/dashboard/savings-goals/_components/create-savings-goal-dialog";
 import { SavingsGoalsTable } from "@/app/(dashboard)/dashboard/savings-goals/_components/savings-goals-table";
@@ -14,6 +15,11 @@ import { listAccounts } from "@/modules/accounts/application/list-accounts";
 import { listSavingsGoals } from "@/modules/savings-goals/application/list-savings-goals";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Metas financeiras",
+  description: "Crie metas e acompanhe o progresso das suas reservas.",
+};
 
 export default async function SavingsGoalsPage() {
   const session = await requireSession();

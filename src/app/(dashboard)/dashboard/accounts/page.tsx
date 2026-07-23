@@ -1,4 +1,5 @@
 import { Wallet, WalletCards } from "lucide-react";
+import type { Metadata } from "next";
 
 import { AccountsTable } from "@/app/(dashboard)/dashboard/accounts/_components/accounts-table";
 import { CreateAccountDialog } from "@/app/(dashboard)/dashboard/accounts/_components/create-account-dialog";
@@ -13,6 +14,11 @@ import { formatCurrency } from "@/lib/formatters";
 import { listAccounts } from "@/modules/accounts/application/list-accounts";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
+
+export const metadata: Metadata = {
+  title: "Contas",
+  description: "Gerencie suas contas e acompanhe seus saldos.",
+};
 
 export default async function AccountsPage() {
   const session = await requireSession();
