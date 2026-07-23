@@ -7,6 +7,7 @@ import {
   creditCardTable,
   debtPaymentTable,
   financialAccountTable,
+  invoiceTable,
   savingsContributionTable,
   transactionTable,
 } from "@/db/schema";

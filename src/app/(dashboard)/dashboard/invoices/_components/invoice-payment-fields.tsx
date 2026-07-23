@@ -54,7 +54,10 @@ export function InvoicePaymentFields({
   return (
     <>
       <div className="space-y-1.5">
-        <label htmlFor={`invoice-amount-${invoiceId}`} className="text-xs font-medium">
+        <label
+          htmlFor={`invoice-amount-${invoiceId}`}
+          className="text-xs font-medium"
+        >
           Valor do pagamento
         </label>
         <Input
@@ -67,7 +70,11 @@ export function InvoicePaymentFields({
           placeholder={formatCurrency(outstandingInCents)}
           disabled={disabled}
           aria-invalid={Boolean(form.formState.errors.amountInCents)}
-          aria-describedby={form.formState.errors.amountInCents ? `invoice-amount-error-${invoiceId}` : undefined}
+          aria-describedby={
+            form.formState.errors.amountInCents
+              ? `invoice-amount-error-${invoiceId}`
+              : undefined
+          }
           {...form.register("amountInCents", {
             setValueAs: (value: string) => Math.round(Number(value) * 100),
           })}
@@ -79,21 +86,37 @@ export function InvoicePaymentFields({
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor={`invoice-account-${invoiceId}`} className="text-xs font-medium">
+        <label
+          htmlFor={`invoice-account-${invoiceId}`}
+          className="text-xs font-medium"
+        >
           Conta de pagamento
         </label>
         <Controller
           control={form.control}
           name="accountId"
           render={({ field, fieldState }) => (
-            <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+              disabled={disabled}
+            >
               <SelectTrigger
                 id={`invoice-account-${invoiceId}`}
                 className="w-full"
                 aria-invalid={fieldState.invalid}
-                aria-describedby={fieldState.error ? `invoice-account-error-${invoiceId}` : undefined}
+                aria-describedby={
+                  fieldState.error
+                    ? `invoice-account-error-${invoiceId}`
+                    : undefined
+                }
               >
-                <SelectValue />
+                <SelectValue>
+                  {field.value
+                    ? accounts.find((account) => account.id === field.value)
+                        ?.name
+                    : "Selecione uma conta"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((account) => (
@@ -105,54 +128,89 @@ export function InvoicePaymentFields({
             </Select>
           )}
         />
-        <FieldError id={`invoice-account-error-${invoiceId}`} message={form.formState.errors.accountId?.message} />
+        <FieldError
+          id={`invoice-account-error-${invoiceId}`}
+          message={form.formState.errors.accountId?.message}
+        />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor={`invoice-method-${invoiceId}`} className="text-xs font-medium">
+        <label
+          htmlFor={`invoice-method-${invoiceId}`}
+          className="text-xs font-medium"
+        >
           Forma de pagamento
         </label>
         <Controller
           control={form.control}
           name="paymentMethod"
           render={({ field, fieldState }) => (
-            <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+              disabled={disabled}
+            >
               <SelectTrigger
                 id={`invoice-method-${invoiceId}`}
                 className="w-full"
                 aria-invalid={fieldState.invalid}
-                aria-describedby={fieldState.error ? `invoice-method-error-${invoiceId}` : undefined}
+                aria-describedby={
+                  fieldState.error
+                    ? `invoice-method-error-${invoiceId}`
+                    : undefined
+                }
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PIX">Pix</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Transferência bancária</SelectItem>
+                <SelectItem value="BANK_TRANSFER">
+                  Transferência bancária
+                </SelectItem>
                 <SelectItem value="DEBIT_CARD">Cartão de débito</SelectItem>
                 <SelectItem value="CASH">Dinheiro</SelectItem>
               </SelectContent>
             </Select>
           )}
         />
-        <FieldError id={`invoice-method-error-${invoiceId}`} message={form.formState.errors.paymentMethod?.message} />
+        <FieldError
+          id={`invoice-method-error-${invoiceId}`}
+          message={form.formState.errors.paymentMethod?.message}
+        />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor={`invoice-category-${invoiceId}`} className="text-xs font-medium">
+        <label
+          htmlFor={`invoice-category-${invoiceId}`}
+          className="text-xs font-medium"
+        >
           Categoria
         </label>
         <Controller
           control={form.control}
           name="categoryId"
           render={({ field, fieldState }) => (
-            <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+              disabled={disabled}
+            >
               <SelectTrigger
                 id={`invoice-category-${invoiceId}`}
                 className="w-full"
                 aria-invalid={fieldState.invalid}
-                aria-describedby={fieldState.error ? `invoice-category-error-${invoiceId}` : undefined}
+                aria-describedby={
+                  fieldState.error
+                    ? `invoice-category-error-${invoiceId}`
+                    : undefined
+                }
               >
-                <SelectValue />
+                <SelectValue>
+                  {field.value
+                    ? categories.find((category) => category.id === field.value)
+                        ?.name
+                    : "Selecione uma categoria"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories.map((category) => (
@@ -164,7 +222,10 @@ export function InvoicePaymentFields({
             </Select>
           )}
         />
-        <FieldError id={`invoice-category-error-${invoiceId}`} message={form.formState.errors.categoryId?.message} />
+        <FieldError
+          id={`invoice-category-error-${invoiceId}`}
+          message={form.formState.errors.categoryId?.message}
+        />
       </div>
     </>
   );

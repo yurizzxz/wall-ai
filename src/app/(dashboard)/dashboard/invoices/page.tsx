@@ -1,4 +1,5 @@
 import { ReceiptText } from "lucide-react";
+import { connection } from "next/server";
 
 import { InvoicesTable } from "@/app/(dashboard)/dashboard/invoices/_components/invoices-table";
 import {
@@ -15,13 +16,19 @@ import { listInvoices } from "@/modules/invoices/application/list-invoices";
 import { createRepositories } from "@/services/repositories";
 import { requireSession } from "@/services/users/require-session";
 
+async function getRequestTimestamp() {
+  await connection();
+  return Date.now();
+}
+
 export default async function InvoicesPage() {
   const session = await requireSession();
   const repositories = createRepositories(session.user.id);
-  const [invoices, accounts, categories] = await Promise.all([
+  const [invoices, accounts, categories, nowTimestamp] = await Promise.all([
     listInvoices({ userId: session.user.id }, repositories.invoices),
     listAccounts(session.user.id, repositories.accounts),
     listCategories(session.user.id, repositories.categories),
+    getRequestTimestamp(),
   ]);
   const activeAccounts = accounts
     .filter((account) => account.isActive)
@@ -34,6 +41,10 @@ export default async function InvoicesPage() {
     )
     .map(({ id, name }) => ({ id, name }));
   const pendingInvoices = invoices.filter((invoice) => invoice.status !== "PAID");
+  const nextInvoice = pendingInvoices.find(
+    (invoice) => invoice.dueAt.getTime() >= nowTimestamp,
+  );
+  const nextInvoiceInCents = nextInvoice?.outstandingInCents ?? 0;
   const outstandingInCents = pendingInvoices.reduce(
     (total, invoice) => total + invoice.outstandingInCents,
     0,
@@ -41,7 +52,6 @@ export default async function InvoicesPage() {
   const overdueInCents = invoices
     .filter((invoice) => invoice.status === "OVERDUE")
     .reduce((total, invoice) => total + invoice.outstandingInCents, 0);
-  const nowTimestamp = Date.now();
   return (
     <div className="mx-auto flex w-full flex-col gap-8 py-6 sm:py-8">
       <header className="space-y-1">
@@ -59,14 +69,20 @@ export default async function InvoicesPage() {
           <CardTitle>Resumo das faturas</CardTitle>
           <CardDescription>Valores que precisam de acompanhamento</CardDescription>
         </CardHeader>
-        <CardContent className="grid px-0 sm:grid-cols-3 sm:divide-x">
-          <div className="border-b px-4 py-4 sm:border-b-0 sm:px-6">
+        <CardContent className="grid divide-y px-0 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+          <div className="px-4 py-4 sm:px-6">
+            <p className="text-xs text-muted-foreground">Próxima fatura</p>
+            <p className="mt-1 font-mono text-xl font-semibold tabular-nums">
+              {formatCurrency(nextInvoiceInCents)}
+            </p>
+          </div>
+          <div className="px-4 py-4 sm:px-6">
             <p className="text-xs text-muted-foreground">Total a pagar</p>
             <p className="mt-1 font-mono text-xl font-semibold tabular-nums">
               {formatCurrency(outstandingInCents)}
             </p>
           </div>
-          <div className="border-b px-4 py-4 sm:border-b-0 sm:px-6">
+          <div className="px-4 py-4 sm:px-6">
             <p className="text-xs text-muted-foreground">Em atraso</p>
             <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-destructive">
               {formatCurrency(overdueInCents)}

@@ -187,6 +187,7 @@ export function createCreditCardRepository(
 
         return {
           ...card,
+          lastFour: card.lastFour ?? undefined,
           committedInCents,
           availableInCents: calculateAvailableLimit(
             card.limitInCents,

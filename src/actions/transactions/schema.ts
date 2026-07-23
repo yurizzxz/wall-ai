@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { entityIdSchema } from "@/actions/shared/schema";
+import { entityIdSchema, optionalDateSchema } from "@/actions/shared/schema";
 
 export const createTransactionSchema = z
   .object({
@@ -27,7 +27,7 @@ export const createTransactionSchema = z
     accountId: entityIdSchema.optional(),
     creditCardId: entityIdSchema.optional(),
     occurredAt: z.coerce.date("Informe uma data válida."),
-    dueAt: z.coerce.date("Informe uma data de vencimento válida.").optional(),
+    dueAt: optionalDateSchema,
     installmentCount: z.coerce
       .number()
       .int("A quantidade de parcelas deve ser um número inteiro.")

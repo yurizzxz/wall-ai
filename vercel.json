@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/jobs/process-recurrences",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

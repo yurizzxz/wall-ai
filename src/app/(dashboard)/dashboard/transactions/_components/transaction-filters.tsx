@@ -27,10 +27,10 @@ export function TransactionFilters({ kind, status }: TransactionFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function updateFilter(name: "kind" | "status", value: string) {
+  function updateFilter(name: "kind" | "status", value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
     if (value === "ALL") params.delete(name);
-    else params.set(name, value);
+    else params.set(name, value as string);
     params.delete("page");
     router.push(params.size > 0 ? `${pathname}?${params.toString()}` : pathname);
   }
