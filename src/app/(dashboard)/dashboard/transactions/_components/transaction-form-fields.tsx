@@ -129,7 +129,8 @@ export function TransactionFormFields({
             step="0.01"
             placeholder="0,00"
             {...form.register("amountInCents", {
-              setValueAs: (value: string) => Math.round(Number(value) * 100),
+              setValueAs: (value: string) =>
+                value === "" ? undefined : Math.round(Number(value) * 100),
             })}
           />
           <FieldError message={form.formState.errors.amountInCents?.message} />

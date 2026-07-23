@@ -26,7 +26,7 @@ type CreateTransactionDialogProps = {
 function createDefaultValues(accounts: TransactionAccountOption[], categories: TransactionCategoryOption[]): DefaultValues<CreateTransactionActionInput> {
   return {
     description: "",
-    amountInCents: 0,
+    amountInCents: undefined,
     kind: "EXPENSE",
     status: "SETTLED",
     paymentMethod: "PIX",
