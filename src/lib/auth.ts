@@ -16,6 +16,10 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
+  rateLimit: {
+    window: 5,
+    max: 50,
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {

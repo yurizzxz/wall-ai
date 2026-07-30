@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { createAccountSchema } from "@/actions/accounts/schema";
+import { authenticatedAction } from "@/actions/shared/authenticated";
+import { enforceRateLimit } from "@/actions/shared/enforce-rate-limit";
 import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { createAccount } from "@/modules/accounts/application/create-account";
 import { createRepositories } from "@/services/repositories";
-import { authenticatedAction } from "@/actions/shared/authenticated";
 
 export const createAccountAction = authenticatedAction
   .inputSchema(createAccountSchema)
@@ -14,6 +15,8 @@ export const createAccountAction = authenticatedAction
     const { accounts } = createRepositories(ctx.user.id);
 
     try {
+      await enforceRateLimit(ctx.user.id);
+
       const account = await createAccount(
         {
           ...parsedInput,

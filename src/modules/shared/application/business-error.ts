@@ -69,7 +69,8 @@ export type BusinessErrorCode =
   | "CREDIT_CARD_INCOME_NOT_ALLOWED"
   | "CREDIT_CARD_REQUIRED"
   | "CREDIT_CARD_ACCOUNT_NOT_ALLOWED"
-  | "CREDIT_CARD_NOT_ALLOWED";
+  | "CREDIT_CARD_NOT_ALLOWED"
+  | "RATE_LIMIT";
 
 export class BusinessError extends Error {
   constructor(

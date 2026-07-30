@@ -72,4 +72,5 @@ export const BUSINESS_ERROR_MESSAGES = {
   CREDIT_CARD_REQUIRED: "Informe o cartão usado na compra.",
   CREDIT_CARD_ACCOUNT_NOT_ALLOWED: "Uma compra no crédito não movimenta uma conta diretamente.",
   CREDIT_CARD_NOT_ALLOWED: "Somente compras no crédito podem indicar um cartão.",
+  RATE_LIMIT: "Muitas operações. Aguarde alguns segundos.",
 } satisfies Record<BusinessErrorCode, string>;

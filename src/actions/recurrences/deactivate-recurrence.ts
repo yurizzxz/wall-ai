@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { deactivateRecurrenceSchema } from "@/actions/recurrences/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { enforceRateLimit } from "@/actions/shared/enforce-rate-limit";
 import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { deactivateRecurrence } from "@/modules/recurrences/application/deactivate-recurrence";
 import { createRepositories } from "@/services/repositories";
@@ -14,6 +15,8 @@ export const deactivateRecurrenceAction = authenticatedAction
     const { recurrences } = createRepositories(ctx.user.id);
 
     try {
+      await enforceRateLimit(ctx.user.id);
+
       await deactivateRecurrence(
         { ...parsedInput, userId: ctx.user.id },
         recurrences,

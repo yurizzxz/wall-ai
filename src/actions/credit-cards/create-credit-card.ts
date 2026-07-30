@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createCreditCardSchema } from "@/actions/credit-cards/schema";
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { enforceRateLimit } from "@/actions/shared/enforce-rate-limit";
 import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { createCreditCard } from "@/modules/credit-cards/application/create-credit-card";
 import { createRepositories } from "@/services/repositories";
@@ -14,6 +15,8 @@ export const createCreditCardAction = authenticatedAction
     const { creditCards } = createRepositories(ctx.user.id);
 
     try {
+      await enforceRateLimit(ctx.user.id);
+
       const card = await createCreditCard(
         { ...parsedInput, userId: ctx.user.id },
         creditCards,

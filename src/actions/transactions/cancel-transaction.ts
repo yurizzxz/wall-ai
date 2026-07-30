@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { authenticatedAction } from "@/actions/shared/authenticated";
+import { enforceRateLimit } from "@/actions/shared/enforce-rate-limit";
 import { actionSuccess, handleActionError } from "@/actions/shared/handle-action-error";
 import { cancelTransactionSchema } from "@/actions/transactions/schema";
 import { cancelTransaction } from "@/modules/transactions/application/cancel-transaction";
@@ -14,6 +15,8 @@ export const cancelTransactionAction = authenticatedAction
     const { transactions } = createRepositories(ctx.user.id);
 
     try {
+      await enforceRateLimit(ctx.user.id);
+
       const transaction = await cancelTransaction(
         { ...parsedInput, userId: ctx.user.id },
         { transactions },
