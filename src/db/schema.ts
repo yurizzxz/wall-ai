@@ -88,6 +88,45 @@ export const recurrenceFrequencyEnum = pgEnum("finance_recurrence_frequency", [
   "YEARLY",
 ]);
 
+export const telegramAccountTable = pgTable(
+  "telegram_account",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    telegramUserId: text("telegram_user_id").notNull(),
+    telegramChatId: text("telegram_chat_id").notNull(),
+
+    username: text("username"),
+    firstName: text("first_name"),
+
+    linkedAt: timestamp("linked_at", {
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+
+    ...timestamps,
+  },
+  (table) => ({
+    userUnique: uniqueIndex("telegram_account_user_id_unique").on(
+      table.userId,
+    ),
+
+    telegramUserUnique: uniqueIndex(
+      "telegram_account_telegram_user_id_unique",
+    ).on(table.telegramUserId),
+
+    chatUnique: uniqueIndex("telegram_account_chat_id_unique").on(
+      table.telegramChatId,
+    ),
+  }),
+);
+
 export const financialAccountTable = pgTable(
   "financial_account",
   {
