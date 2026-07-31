@@ -27,9 +27,7 @@ const telegramUpdateSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const receivedSecret = request.headers.get(
-    "x-telegram-bot-api-secret-token",
-  );
+  const receivedSecret = request.headers.get("x-telegram-bot-api-secret-token");
 
   if (receivedSecret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
     return new Response("Unauthorized", { status: 401 });
@@ -38,6 +36,21 @@ export async function POST(request: Request) {
   const parsed = telegramUpdateSchema.safeParse(await request.json());
 
   if (!parsed.success) {
+    return Response.json({ ok: true });
+  }
+
+  const update = parsed.data;
+
+  const accepted = await redis.set(
+    `wallai:telegram:update:${update.update_id}`,
+    "1",
+    {
+      nx: true,
+      ex: 86_400,
+    },
+  );
+
+  if (!accepted) {
     return Response.json({ ok: true });
   }
 
@@ -79,7 +92,7 @@ export async function POST(request: Request) {
 
     await sendTelegramMessage({
       chatId,
-      text: "Telegram conectado ao Wallai com sucesso.",
+      text: "Telegram conectado ao WallAI com sucesso.",
     });
 
     return Response.json({ ok: true });
@@ -90,7 +103,7 @@ export async function POST(request: Request) {
   if (!userId) {
     await sendTelegramMessage({
       chatId,
-      text: "Conecte seu Telegram pelo painel do Wallai primeiro.",
+      text: "Conecte seu Telegram pelo painel do WallAI primeiro.",
     });
 
     return Response.json({ ok: true });
@@ -115,7 +128,6 @@ export async function POST(request: Request) {
     chatId,
     text: response,
   });
-
 
   return Response.json({ ok: true });
 }

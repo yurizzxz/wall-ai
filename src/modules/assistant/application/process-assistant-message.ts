@@ -34,7 +34,6 @@ Não afirme ter consultado dados do usuário sem usar uma ferramenta.
 Quando não tiver informação suficiente, peça os dados necessários.
       `.trim(),
       prompt: message,
-      temperature: 0,
       maxOutputTokens: 500,
       timeout: 15_000,
     });

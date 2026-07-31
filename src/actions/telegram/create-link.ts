@@ -14,7 +14,9 @@ export const createTelegramLinkAction = authenticatedAction.action(
       await enforceRateLimit(ctx.user.id);
 
       const token = randomBytes(24).toString("base64url");
-      const botUsername = process.env.TELEGRAM_BOT_USERNAME;
+      const botUsername = process.env.TELEGRAM_BOT_USERNAME
+        ?.trim()
+        .replace(/^@/, "");
 
       if (!botUsername) {
         throw new Error("TELEGRAM_BOT_USERNAME não configurado.");
@@ -30,7 +32,8 @@ export const createTelegramLinkAction = authenticatedAction.action(
 
       return {
         ok: true as const,
-        url: `https://t.me/${botUsername}?start=${token}`,
+        appUrl: `tg://resolve?domain=${encodeURIComponent(botUsername)}&start=${encodeURIComponent(token)}`,
+        webUrl: `https://t.me/${encodeURIComponent(botUsername)}?start=${encodeURIComponent(token)}`,
       };
     } catch (error) {
       console.error("Erro ao gerar vínculo do Telegram", error);

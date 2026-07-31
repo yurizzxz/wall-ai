@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireSession } from "@/services/users/require-session";
 import { Header } from "@/components/common/header";
 import { ThemeProvider } from "@/components/common/theme-provider";
+import { Toaster } from "@/components/ui/toast";
 
 export default async function DashboardLayout({
   children,
@@ -14,6 +15,7 @@ export default async function DashboardLayout({
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <Header user={session.user} />
       <main className="flex-1 px-4 sm:px-6 lg:px-8">{children}</main>
+      <Toaster />
     </ThemeProvider>
   );
 }

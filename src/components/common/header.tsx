@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
 } from "../ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { TelegramIntegrationDialog } from "./telegram-integration-dialog";
 
 type NavigationItem = {
   label: string;
@@ -125,6 +126,7 @@ export function Header({ user }: HeaderProps) {
                 </Link>
               );
             })}
+            <TelegramIntegrationDialog />
           </nav>
         </div>
         <div className="flex items-center gap-1">
