@@ -1,19 +1,30 @@
 import "server-only";
 
-import { generateText } from "ai";
+import { generateText, stepCountIs } from "ai";
 
 import { geminiModel } from "@/lib/gemini";
 
 const MAX_MESSAGE_LENGTH = 2_000;
 
 export type ProcessAssistantMessageInput = {
+  userId: string;
   message: string;
+};
+
+type ProcessAssistantMessageDependencies = {
+  createTools(
+    userId: string,
+  ): NonNullable<Parameters<typeof generateText>[0]["tools"]>;
 };
 
 export async function processAssistantMessage(
   input: ProcessAssistantMessageInput,
+  dependencies: ProcessAssistantMessageDependencies,
 ): Promise<string> {
   const message = input.message.trim();
+  const currentDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date());
 
   if (!message) {
     return "Envie uma mensagem para eu poder ajudar.";
@@ -27,15 +38,20 @@ export async function processAssistantMessage(
     const result = await generateText({
       model: geminiModel,
       system: `
-Você é o assistente financeiro do Wallai.
+Data atual no fuso de São Paulo: ${currentDate}.
+Os valores retornados pelas ferramentas estão em centavos. Converta-os corretamente para reais ao responder.
+Você é o assistente financeiro do WallAI.
 Responda em português brasileiro, de forma direta e clara.
 Nunca invente valores financeiros.
+Nunca FUJA do contexto do WallAI. Não fale sobre outros assuntos, mesmo quando perguntado.
+Devolva respostas formatadas para o Telegram direto.
 Não afirme ter consultado dados do usuário sem usar uma ferramenta.
 Quando não tiver informação suficiente, peça os dados necessários.
       `.trim(),
       prompt: message,
-      maxOutputTokens: 500,
-      timeout: 15_000,
+      tools: dependencies.createTools(input.userId),
+      stopWhen: stepCountIs(5),
+      maxOutputTokens: 1_000,
     });
 
     const response = result.text.trim();

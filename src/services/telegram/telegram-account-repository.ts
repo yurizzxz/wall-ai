@@ -1,6 +1,6 @@
 import db from "@/db";
 import { telegramAccountTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 export type LinkTelegramAccountInput = {
   userId: string;
@@ -31,7 +31,19 @@ export function createTelegramAccountRepository(): TelegramAccountRepository {
     },
 
     async link(input) {
-      await db.insert(telegramAccountTable).values(input);
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(telegramAccountTable)
+          .where(
+            or(
+              eq(telegramAccountTable.userId, input.userId),
+              eq(telegramAccountTable.telegramUserId, input.telegramUserId),
+              eq(telegramAccountTable.telegramChatId, input.telegramChatId),
+            ),
+          );
+
+        await tx.insert(telegramAccountTable).values(input);
+      });
     },
   };
 }

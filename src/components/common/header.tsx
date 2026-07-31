@@ -207,6 +207,7 @@ export function Header({ user }: HeaderProps) {
                       </SheetClose>
                     );
                   })}
+                  <TelegramIntegrationDialog />
                 </nav>
               </SheetContent>
             </Sheet>
